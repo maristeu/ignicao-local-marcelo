@@ -6,274 +6,369 @@
     <title>Auditoria e Diagnóstico GMB | Ignição Local</title>
     <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpeQX3m6lPjDYAorZ6VnQqYvlu_r17idU&libraries=places&v=weekly"></script>
     <style>
+        :root {
+            --primary: #1a365d;
+            --accent: #ff6b00;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray: #f3f4f6;
+        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+            background-color: #e5e7eb;
             color: #333;
             margin: 0;
-            padding: 40px 20px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
         }
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 40px;
+            background-color: white;
             border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 800px;
         }
-        h1 {
+        .header {
             text-align: center;
-            color: #1a73e8;
-            margin-bottom: 5px;
-            margin-top: 0;
-        }
-        p.subtitle {
-            text-align: center;
-            color: #5f6368;
             margin-bottom: 30px;
-            font-size: 18px;
-            font-weight: 500;
+        }
+        .header h1 {
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        .header p {
+            color: #666;
+            margin-top: 0;
         }
         .search-box {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             margin-bottom: 30px;
         }
-        input[type="text"] {
-            flex: 1;
-            padding: 15px 20px;
-            border: 2px solid #e0e0e0;
+        input {
+            flex-grow: 1;
+            padding: 15px;
+            border: 2px solid var(--gray);
             border-radius: 8px;
             font-size: 16px;
-            transition: 0.3s;
-        }
-        input[type="text"]:focus {
-            border-color: #1a73e8;
             outline: none;
         }
+        input:focus { border-color: var(--primary); }
         button {
             padding: 15px 30px;
-            background-color: #1a73e8;
+            background-color: var(--primary);
             color: white;
             border: none;
             border-radius: 8px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.3s;
+            transition: background 0.3s;
         }
-        button:hover {
-            background-color: #1557b0;
-        }
-        #loading {
-            display: none;
+        button:hover { background-color: #122846; }
+        
+        /* Relatório Area */
+        #report-area { display: none; animation: fadeIn 0.5s; }
+        
+        /* Velocímetro */
+        .gauge-container {
             text-align: center;
-            font-weight: bold;
-            color: #ff6b00;
-            margin-bottom: 20px;
-        }
-        #results {
-            display: none;
-            animation: fadeIn 0.5s;
-        }
-        .score-board {
-            text-align: center;
-            padding: 30px;
-            background: #f8f9fa;
+            padding: 30px 0;
+            background: var(--gray);
             border-radius: 12px;
             margin-bottom: 30px;
-            border: 1px solid #e0e0e0;
         }
-        .score-value {
-            font-size: 64px;
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(var(--success) 0%, var(--success) 0%, #e5e7eb 0%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px auto;
+            position: relative;
+            transition: background 1s ease-out;
+        }
+        .score-circle::before {
+            content: "";
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background-color: var(--gray);
+            border-radius: 50%;
+        }
+        .score-number {
+            position: relative;
+            font-size: 42px;
             font-weight: bold;
-            margin: 10px 0;
+            color: var(--primary);
         }
-        .score-value.green { color: #34a853; }
-        .score-value.yellow { color: #fbbc04; }
-        .score-value.red { color: #ea4335; }
-        
+        .score-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        /* Cards de Análise */
         .section-title {
-            font-size: 20px;
-            border-bottom: 2px solid #f0f2f5;
+            color: var(--primary);
+            border-bottom: 2px solid var(--gray);
             padding-bottom: 10px;
             margin-top: 30px;
-            margin-bottom: 20px;
         }
         .card {
-            padding: 20px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-left: 5px solid #ccc;
+            padding: 15px 20px;
             margin-bottom: 15px;
-            border-radius: 8px;
-            border-left: 6px solid;
-            background-color: #fafafa;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
         }
-        .card h4 { margin: 0 0 10px 0; font-size: 18px; }
-        .card p { margin: 0; color: #555; line-height: 1.5; }
+        .card.success { border-left-color: var(--success); }
+        .card.warning { border-left-color: var(--warning); }
+        .card.danger { border-left-color: var(--danger); }
         
-        .card.yellow { border-color: #fbbc04; }
-        .card.green { border-color: #34a853; }
-        .card.red { border-color: #ea4335; }
+        .card-header {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-desc { color: #666; font-size: 14px; }
         
+        /* Auditoria Manual */
+        .manual-audit {
+            background-color: #fff3cd;
+            border: 1px solid #ffe69c;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .manual-audit h3 { color: #856404; margin-top: 0; }
+        .manual-item { margin-bottom: 10px; font-size: 14px; color: #555; display: flex; align-items: center; gap: 8px;}
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-    @media (max-width: 600px) {
-            .search-box {
-                flex-direction: column;
-            }
-            button {
-                width: 100%;
-            }
+        @media (max-width: 600px) {
+            .search-box { flex-direction: column; }
+            button { width: 100%; }
         }
-    
     </style>
 </head>
 <body>
 
 <div class="container">
-    <img src="logo-ignição-local.webp" alt="Logo Ignição Local" style="max-width: 250px; display: block; margin: 0 auto 20px auto;">
-    <h1>Auditoria e Diagnóstico GMB</h1>
-    <p class="subtitle">Análise especializada conduzida por Marcelo</p>
-
-    <div class="search-box">
-        <input type="text" id="empresaInput" placeholder="Ex: Pizzaria em Caraguatatuba...">
-        <button onclick="iniciarBusca()">Analisar Empresa</button>
+    <div class="header">
+        <h1>Ignição Local</h1>
+        <p>Auditoria Avançada de Google Business Profile</p>
     </div>
 
-    <div id="loading">⏳ Rastreador Ignição coletando dados oficiais do Google... Aguarde.</div>
+    <div class="search-box">
+        <input type="text" id="empresa-input" placeholder="Ex: Ótica Vista do Mar Caraguatatuba">
+        <button onclick="iniciarAuditoria()">Analisar Perfil</button>
+    </div>
 
-    <div id="results">
-        <div class="score-board">
-            <h2 id="nomeEmpresa" style="margin-top:0; color:#333;">Nome da Empresa</h2>
-            <h3>Score de Otimização Local</h3>
-            <div id="scoreNumber" class="score-value">0/100</div>
-            <p id="scoreText">Status: Analisando...</p>
+    <div id="loading" style="display: none; text-align: center; color: #666;">
+        <p>⏳ Analisando algoritmos do Google... aguarde.</p>
+    </div>
+
+    <div id="report-area">
+        <div class="gauge-container">
+            <h2 id="empresa-nome" style="margin-top:0;">Nome da Empresa</h2>
+            <div class="score-circle" id="score-circle">
+                <span class="score-number" id="score-number">0</span>
+            </div>
+            <div class="score-text" id="score-text">Analisando...</div>
         </div>
 
-        <h3 class="section-title">⚠️ Oportunidades de Melhoria (Atenção Imediata)</h3>
-        <div id="alertasContainer"></div>
+        <h3 class="section-title">📊 Fundamentos Básicos (Automatizado)</h3>
+        <div id="resultados-auto"></div>
 
-        <h3 class="section-title">🟢 Pontos Fortes (Fundamentos Validados)</h3>
-        <div id="sucessosContainer"></div>
+        <h3 class="section-title">⚠️ Oportunidades de Otimização (Automatizado)</h3>
+        <div id="resultados-oportunidades"></div>
+
+        <div class="manual-audit">
+            <h3>🔒 Análise Especializada Pendente</h3>
+            <p style="font-size: 14px; margin-bottom: 15px;">Os itens abaixo exigem uma varredura profunda que nossa equipe realiza internamente. Essas falhas geralmente causam perda de clientes para a concorrência:</p>
+            <div class="manual-item">🔴 <b>Avaliações sem Resposta:</b> Impacta diretamente na retenção do cliente.</div>
+            <div class="manual-item">🔴 <b>Atualização de Posts (GMB):</b> O Google prioriza perfis com postagens recentes.</div>
+            <div class="manual-item">🔴 <b>Palavras-chave na Descrição:</b> A descrição atual possui os termos que o seu cliente pesquisa?</div>
+            <div class="manual-item">🔴 <b>Catálogo de Produtos/Serviços:</b> Facilita a compra por impulso direto no mapa.</div>
+            <br>
+            <button style="background-color: #ff6b00; width: 100%;">Solicitar Auditoria Completa</button>
+        </div>
     </div>
 </div>
 
+<div id="map" style="display: none;"></div>
+
 <script>
-    async function iniciarBusca() {
-        const input = document.getElementById('empresaInput').value;
-        if(input.trim() === '') {
-            alert('Por favor, digite o nome de uma empresa para realizar a auditoria!');
+    let map;
+    let service;
+
+    function iniciarAuditoria() {
+        const input = document.getElementById('empresa-input').value;
+        if (!input) {
+            alert('Por favor, digite o nome da empresa.');
             return;
         }
 
-        document.getElementById('results').style.display = 'none';
         document.getElementById('loading').style.display = 'block';
+        document.getElementById('report-area').style.display = 'none';
 
-        try {
-            // Usa a nova API moderna do Google Places
-            const { places } = await google.maps.places.Place.searchByText({
-                textQuery: input,
-                fields: ['displayName', 'rating', 'userRatingCount', 'nationalPhoneNumber', 'websiteURI', 'regularOpeningHours', 'photos']
-            });
+        const mapLocation = new google.maps.LatLng(-23.626, -45.414); // Caraguatatuba ref
+        map = new google.maps.Map(document.getElementById('map'), { center: mapLocation, zoom: 15 });
+        service = new google.maps.places.PlacesService(map);
 
-            if (places && places.length > 0) {
-                processarAuditoria(places[0]);
+        const request = { query: input, fields: ['place_id', 'name'] };
+
+        service.textSearch(request, function(results, status) {
+            if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                buscarDetalhes(results[0].place_id);
             } else {
-                alert('Empresa não encontrada no Google. Tente digitar o nome junto com a cidade.');
                 document.getElementById('loading').style.display = 'none';
+                alert('Empresa não encontrada. Tente colocar a cidade junto ao nome.');
             }
-        } catch (error) {
-            console.error("Erro da API:", error);
-            alert('Erro de conexão. Verifique se o faturamento e a "Places API (New)" estão ativos no Google Cloud.');
-            document.getElementById('loading').style.display = 'none';
-        }
+        });
     }
 
-    function processarAuditoria(place) {
-        let score = 20; 
-        let alertasHTML = '';
-        let sucessosHTML = '';
+    function buscarDetalhes(placeId) {
+        const request = {
+            placeId: placeId,
+            fields: ['name', 'formatted_phone_number', 'website', 'rating', 'user_ratings_total', 'opening_hours', 'photos']
+        };
 
-        // Nome da empresa na nova API
-        document.getElementById('nomeEmpresa').innerText = place.displayName;
+        service.getDetails(request, function(place, status) {
+            document.getElementById('loading').style.display = 'none';
+            if (status === google.maps.places.PlacesServiceStatus.OK) {
+                gerarRelatorio(place);
+            }
+        });
+    }
+
+    function gerarRelatorio(place) {
+        let score = 0;
+        let acertos = [];
+        let erros = [];
+
+        document.getElementById('empresa-nome').innerText = place.name;
 
         // 1. Telefone
-        if (place.nationalPhoneNumber) {
-            score += 15;
-            sucessosHTML += `<div class="card green"><h4>📞 Telefone Cadastrado</h4><p>O número de contato está público e facilitando vendas.</p></div>`;
+        if (place.formatted_phone_number) {
+            score += 20;
+            acertos.push({ titulo: '📞 Telefone Cadastrado', desc: 'O número está público, facilitando o contato dos clientes.' });
         } else {
-            alertasHTML += `<div class="card red"><h4>❌ Telefone Ausente</h4><p><strong>Ação recomendada:</strong> O cliente não consegue entrar em contato. Adicionar o telefone imediatamente é vital para não perder vendas locais.</p></div>`;
+            erros.push({ titulo: '🚨 Telefone Ausente', desc: 'Os clientes não conseguem ligar para a sua empresa.' });
         }
 
         // 2. Website
-        if (place.websiteURI) {
-            score += 15;
-            sucessosHTML += `<div class="card green"><h4>🌐 Website Integrado</h4><p>Perfil transmite credibilidade com um link de destino oficial.</p></div>`;
+        if (place.website) {
+            score += 20;
+            acertos.push({ titulo: '🌐 Website Vinculado', desc: 'Aumenta drasticamente a autoridade e passa credibilidade.' });
         } else {
-            alertasHTML += `<div class="card yellow"><h4>⚠️ Ausência de Website</h4><p><strong>Ação recomendada:</strong> Ter um site aumenta drasticamente a autoridade. Sugerimos a criação de uma página de destino (Landing Page) para captar clientes que pesquisam pelo negócio.</p></div>`;
+            erros.push({ titulo: '🚨 Ausência de Website', desc: 'Recomendamos a criação de uma Landing Page para captar buscas.' });
         }
 
-        // 3. Horários de Funcionamento
-        if (place.regularOpeningHours) {
-            score += 15;
-            sucessosHTML += `<div class="card green"><h4>⏰ Horários Preenchidos</h4><p>O cliente sabe exatamente quando o negócio está aberto.</p></div>`;
+        // 3. Horários
+        if (place.opening_hours && place.opening_hours.weekday_text) {
+            score += 20;
+            acertos.push({ titulo: '⏰ Horários Preenchidos', desc: 'O cliente sabe exatamente quando o negócio está aberto.' });
         } else {
-            alertasHTML += `<div class="card red"><h4>❌ Sem Horário de Funcionamento</h4><p><strong>Ação recomendada:</strong> Perfis sem horário configurado perdem relevância no "Local Pack" do Google. Configure os horários de abertura e fechamento para atrair clientes de porta.</p></div>`;
+            erros.push({ titulo: '🚨 Horários Indefinidos', desc: 'Pode causar frustração se um cliente for até o local e estiver fechado.' });
         }
 
-        // 4. Mídia / Fotos
-        if (place.photos && place.photos.length > 0) {
-            score += 15;
-            sucessosHTML += `<div class="card green"><h4>📸 Presença Visual</h4><p>A empresa possui banco de imagens, tornando o perfil mais atrativo.</p></div>`;
-        } else {
-            alertasHTML += `<div class="card yellow"><h4>⚠️ Perfil Sem Mídia</h4><p><strong>Ação recomendada:</strong> O Google prioriza estabelecimentos visualmente ricos. É necessário adicionar a foto de capa, logotipo e imagens do local.</p></div>`;
-        }
-
-        // 5. Avaliações (Prova Social)
+        // 4. Avaliações (Nota)
         if (place.rating) {
             if (place.rating >= 4.5) {
                 score += 20;
-                sucessosHTML += `<div class="card green"><h4>⭐ Excelente Média de Avaliações (${place.rating})</h4><p>O perfil possui altíssima prova social, esmagando a concorrência.</p></div>`;
+                acertos.push({ titulo: `⭐ Média de Avaliações Excelente (${place.rating})`, desc: 'Uma nota alta transmite segurança extrema ao cliente.' });
             } else if (place.rating >= 4.0) {
                 score += 10;
-                alertasHTML += `<div class="card yellow"><h4>⚠️ Média de Avaliações Razoável (${place.rating})</h4><p><strong>Ação recomendada:</strong> A nota está na média, mas pode perder para concorrentes próximos. Crie campanhas para captar clientes e pedir avaliações de 5 estrelas.</p></div>`;
+                erros.push({ titulo: `⚠️ Média de Avaliações Razoável (${place.rating})`, desc: 'A nota está na média, mas pode perder para concorrentes próximos.' });
             } else {
-                alertasHTML += `<div class="card red"><h4>❌ Média de Avaliações Crítica (${place.rating})</h4><p><strong>Ação recomendada:</strong> O negócio está perdendo credibilidade na praça. É urgente um serviço de gestão de reputação para diluir as notas baixas e resolver os problemas relatados.</p></div>`;
+                erros.push({ titulo: `🚨 Média de Avaliações Baixa (${place.rating})`, desc: 'Sinal de alerta. Isso afasta clientes imediatamente.' });
             }
         } else {
-            alertasHTML += `<div class="card red"><h4>❌ Zero Avaliações</h4><p><strong>Ação recomendada:</strong> O perfil não tem prova social. Iniciar imediatamente um trabalho de captação de reviews com clientes fiéis.</p></div>`;
+            erros.push({ titulo: '🚨 Sem Avaliações', desc: 'A empresa não possui reputação online validada.' });
         }
 
-        // Renderizar Nota
-        const scoreElement = document.getElementById('scoreNumber');
-        const scoreText = document.getElementById('scoreText');
-        
-        scoreElement.innerText = score + '/100';
-        scoreElement.className = 'score-value';
-        
-        if (score >= 80) {
-            scoreElement.classList.add('green');
-            scoreText.innerText = 'Status: Excelente (Perfil Blindado)';
-        } else if (score >= 50) {
-            scoreElement.classList.add('yellow');
-            scoreText.innerText = 'Status: Razoável (Perdendo oportunidades orgânicas)';
+        // 5. Volume e Fotos
+        if (place.user_ratings_total && place.user_ratings_total > 20) {
+            score += 10;
+            acertos.push({ titulo: `📈 Volume de Avaliações Saudável (${place.user_ratings_total})`, desc: 'Mostra que o negócio é frequentado e testado por muitos.' });
         } else {
-            scoreElement.classList.add('red');
-            scoreText.innerText = 'Status: Crítico (Necessita Intervenção Urgente)';
+            erros.push({ titulo: `⚠️ Baixo Volume de Avaliações (${place.user_ratings_total || 0})`, desc: 'É necessário criar campanhas urgentes para captar avaliações de clientes.' });
         }
 
-        if (alertasHTML === '') {
-            alertasHTML = '<div class="card green"><p>O perfil está com os principais fundamentos perfeitamente ajustados. O foco agora deve ser manter a frequência de postagens e o ranqueamento SEO avançado.</p></div>';
+        if (place.photos && place.photos.length > 0) {
+            score += 10;
+            acertos.push({ titulo: '📸 Presença Visual', desc: 'A empresa possui banco de imagens público, tornando o perfil atrativo.' });
+        } else {
+            erros.push({ titulo: '🚨 Sem Banco de Imagens', desc: 'Perfis sem fotos recebem 42% menos solicitações de rotas.' });
         }
 
-        document.getElementById('alertasContainer').innerHTML = alertasHTML;
-        document.getElementById('sucessosContainer').innerHTML = sucessosHTML;
+        // Atualizar Tela
+        renderizarCards('resultados-auto', acertos, 'success');
         
-        document.getElementById('results').style.display = 'block';
+        if(erros.length > 0) {
+            renderizarCards('resultados-oportunidades', erros, erros.map(e => e.titulo.includes('🚨') ? 'danger' : 'warning'));
+        } else {
+            document.getElementById('resultados-oportunidades').innerHTML = '<p style="color: green;">Perfil blindado! Não há alertas básicos imediatos.</p>';
+        }
+
+        // Atualizar Velocímetro
+        animarVelocimetro(score);
+        document.getElementById('report-area').style.display = 'block';
+    }
+
+    function renderizarCards(containerId, itens, typeClass) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        itens.forEach((item, index) => {
+            // Lógica para aplicar a classe danger ou warning caso typeClass seja um array
+            let finalClass = Array.isArray(typeClass) ? typeClass[index] : typeClass;
+            container.innerHTML += `
+                <div class="card ${finalClass}">
+                    <div class="card-header">${item.titulo}</div>
+                    <div class="card-desc">${item.desc}</div>
+                </div>
+            `;
+        });
+    }
+
+    function animarVelocimetro(score) {
+        const circle = document.getElementById('score-circle');
+        const numText = document.getElementById('score-number');
+        const statusText = document.getElementById('score-text');
+        
+        let color = 'var(--danger)';
+        if(score >= 50) color = 'var(--warning)';
+        if(score >= 80) color = 'var(--success)';
+
+        let statusString = 'Crítico (Perdendo Clientes)';
+        if(score >= 50) statusString = 'Razoável (Deixando dinheiro na mesa)';
+        if(score >= 80) statusString = 'Excelente (Bem Otimizado)';
+
+        statusText.innerText = `Status: ${statusString}`;
+        statusText.style.color = color;
+
+        // Animação CSS do círculo
+        setTimeout(() => {
+            circle.style.background = `conic-gradient(${color} ${score}%, #e5e7eb ${score}%)`;
+            numText.innerText = score;
+            numText.style.color = color;
+        }, 100);
     }
 </script>
-
 </body>
 </html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoria e Diagnóstico GMB | Ignição Local</title>
+    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCxVmqwweGUQ2bc55DvxLLOmMkwlPTjT0o&libraries=places&v=weekly"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 5px;
+            margin-top: 0;
+        }
+        p.subtitle {
+            text-align: center;
+            color: #5f6368;
+            margin-bottom: 30px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .search-box {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: #1a73e8;
+            outline: none;
+        }
+        button {
+            padding: 15px 30px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #1557b0;
+        }
+        #loading {
+            display: none;
+            text-align: center;
+            font-weight: bold;
+            color: #ff6b00;
+            margin-bottom: 20px;
+        }
+        #results {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        .score-board {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+        }
+        .score-value {
+            font-size: 64px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .score-value.green { color: #34a853; }
+        .score-value.yellow { color: #fbbc04; }
+        .score-value.red { color: #ea4335; }
+        
+        .section-title {
+            font-size: 20px;
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 10px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+        .card {
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 6px solid;
+            background-color: #fafafa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .card h4 { margin: 0 0 10px 0; font-size: 18px; }
+        .card p { margin: 0; color: #555; line-height: 1.5; }
+        
+        .card.yellow { border-color: #fbbc04; }
+        .card.green { border-color: #34a853; }
+        .card.red { border-color: #ea4335; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <img src="logo-ignição-local.webp" alt="Logo Ignição Local" style="max-width: 250px; display: block; margin: 0 auto 20px auto;">
+    <h1>Auditoria e Diagnóstico GMB</h1>
+    <p class="subtitle">Análise especializada conduzida por Marcelo</p>
+
+    <div class="search-box">
+        <input type="text" id="empresaInput" placeholder="Ex: Pizzaria em Caraguatatuba...">
+        <button onclick="iniciarBusca()">Analisar Empresa</button>
+    </div>
+
+    <div id="loading">⏳ Rastreador Ignição coletando dados oficiais do Google... Aguarde.</div>
+
+    <div id="results">
+        <div class="score-board">
+            <h2 id="nomeEmpresa" style="margin-top:0; color:#333;">Nome da Empresa</h2>
+            <h3>Score de Otimização Local</h3>
+            <div id="scoreNumber" class="score-value">0/100</div>
+            <p id="scoreText">Status: Analisando...</p>
+        </div>
+
+        <h3 class="section-title">⚠️ Oportunidades de Melhoria (Atenção Imediata)</h3>
+        <div id="alertasContainer"></div>
+
+        <h3 class="section-title">🟢 Pontos Fortes (Fundamentos Validados)</h3>
+        <div id="sucessosContainer"></div>
+    </div>
+</div>
+
+<script>
+    async function iniciarBusca() {
+        const input = document.getElementById('empresaInput').value;
+        if(input.trim() === '') {
+            alert('Por favor, digite o nome de uma empresa para realizar a auditoria!');
+            return;
+        }
+
+        document.getElementById('results').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
+
+        try {
+            // Usa a nova API moderna do Google Places
+            const { places } = await google.maps.places.Place.searchByText({
+                textQuery: input,
+                fields: ['displayName', 'rating', 'userRatingCount', 'nationalPhoneNumber', 'websiteURI', 'regularOpeningHours', 'photos']
+            });
+
+            if (places && places.length > 0) {
+                processarAuditoria(places[0]);
+            } else {
+                alert('Empresa não encontrada no Google. Tente digitar o nome junto com a cidade.');
+                document.getElementById('loading').style.display = 'none';
+            }
+        } catch (error) {
+            console.error("Erro da API:", error);
+            alert('Erro de conexão. Verifique se o faturamento e a "Places API (New)" estão ativos no Google Cloud.');
+            document.getElementById('loading').style.display = 'none';
+        }
+    }
+
+    function processarAuditoria(place) {
+        let score = 20; 
+        let alertasHTML = '';
+        let sucessosHTML = '';
+
+        // Nome da empresa na nova API
+        document.getElementById('nomeEmpresa').innerText = place.displayName;
+
+        // 1. Telefone
+        if (place.nationalPhoneNumber) {
+            score += 15;
+            sucessosHTML += `<div class="card green"><h4>📞 Telefone Cadastrado</h4><p>O número de contato está público e facilitando vendas.</p></div>`;
+        } else {
+            alertasHTML += `<div class="card red"><h4>❌ Telefone Ausente</h4><p><strong>Ação recomendada:</strong> O cliente não consegue entrar em contato. Adicionar o telefone imediatamente é vital para não perder vendas locais.</p></div>`;
+        }
+
+        // 2. Website
+        if (place.websiteURI) {
+            score += 15;
+            sucessosHTML += `<div class="card green"><h4>🌐 Website Integrado</h4><p>Perfil transmite credibilidade com um link de destino oficial.</p></div>`;
+        } else {
+            alertasHTML += `<div class="card yellow"><h4>⚠️ Ausência de Website</h4><p><strong>Ação recomendada:</strong> Ter um site aumenta drasticamente a autoridade. Sugerimos a criação de uma página de destino (Landing Page) para captar clientes que pesquisam pelo negócio.</p></div>`;
+        }
+
+        // 3. Horários de Funcionamento
+        if (place.regularOpeningHours) {
+            score += 15;
+            sucessosHTML += `<div class="card green"><h4>⏰ Horários Preenchidos</h4><p>O cliente sabe exatamente quando o negócio está aberto.</p></div>`;
+        } else {
+            alertasHTML += `<div class="card red"><h4>❌ Sem Horário de Funcionamento</h4><p><strong>Ação recomendada:</strong> Perfis sem horário configurado perdem relevância no "Local Pack" do Google. Configure os horários de abertura e fechamento para atrair clientes de porta.</p></div>`;
+        }
+
+        // 4. Mídia / Fotos
+        if (place.photos && place.photos.length > 0) {
+            score += 15;
+            sucessosHTML += `<div class="card green"><h4>📸 Presença Visual</h4><p>A empresa possui banco de imagens, tornando o perfil mais atrativo.</p></div>`;
+        } else {
+            alertasHTML += `<div class="card yellow"><h4>⚠️ Perfil Sem Mídia</h4><p><strong>Ação recomendada:</strong> O Google prioriza estabelecimentos visualmente ricos. É necessário adicionar a foto de capa, logotipo e imagens do local.</p></div>`;
+        }
+
+        // 5. Avaliações (Prova Social)
+        if (place.rating) {
+            if (place.rating >= 4.5) {
+                score += 20;
+                sucessosHTML += `<div class="card green"><h4>⭐ Excelente Média de Avaliações (${place.rating})</h4><p>O perfil possui altíssima prova social, esmagando a concorrência.</p></div>`;
+            } else if (place.rating >= 4.0) {
+                score += 10;
+                alertasHTML += `<div class="card yellow"><h4>⚠️ Média de Avaliações Razoável (${place.rating})</h4><p><strong>Ação recomendada:</strong> A nota está na média, mas pode perder para concorrentes próximos. Crie campanhas para captar clientes e pedir avaliações de 5 estrelas.</p></div>`;
+            } else {
+                alertasHTML += `<div class="card red"><h4>❌ Média de Avaliações Crítica (${place.rating})</h4><p><strong>Ação recomendada:</strong> O negócio está perdendo credibilidade na praça. É urgente um serviço de gestão de reputação para diluir as notas baixas e resolver os problemas relatados.</p></div>`;
+            }
+        } else {
+            alertasHTML += `<div class="card red"><h4>❌ Zero Avaliações</h4><p><strong>Ação recomendada:</strong> O perfil não tem prova social. Iniciar imediatamente um trabalho de captação de reviews com clientes fiéis.</p></div>`;
+        }
+
+        // Renderizar Nota
+        const scoreElement = document.getElementById('scoreNumber');
+        const scoreText = document.getElementById('scoreText');
+        
+        scoreElement.innerText = score + '/100';
+        scoreElement.className = 'score-value';
+        
+        if (score >= 80) {
+            scoreElement.classList.add('green');
+            scoreText.innerText = 'Status: Excelente (Perfil Blindado)';
+        } else if (score >= 50) {
+            scoreElement.classList.add('yellow');
+            scoreText.innerText = 'Status: Razoável (Perdendo oportunidades orgânicas)';
+        } else {
+            scoreElement.classList.add('red');
+            scoreText.innerText = 'Status: Crítico (Necessita Intervenção Urgente)';
+        }
+
+        if (alertasHTML === '') {
+            alertasHTML = '<div class="card green"><p>O perfil está com os principais fundamentos perfeitamente ajustados. O foco agora deve ser manter a frequência de postagens e o ranqueamento SEO avançado.</p></div>';
+        }
+
+        document.getElementById('alertasContainer').innerHTML = alertasHTML;
+        document.getElementById('sucessosContainer').innerHTML = sucessosHTML;
+        
+        document.getElementById('results').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>

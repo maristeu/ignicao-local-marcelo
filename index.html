@@ -225,6 +225,7 @@
 <script>
     let map;
     let service;
+    let pontuacaoAtual = 0; //
 
     function iniciarAuditoria() {
         const input = document.getElementById('empresa-input').value;
@@ -462,11 +463,46 @@
         let mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + nomeBuscado + '&query_place_id=' + place.place_id;
         
         erros.push({ 
-            titulo: '⚠️ Risco de Engajamento e Respostas (Penalidade Automática)', 
-            desc: 'O sistema reteve 20 pontos porque não foi possível confirmar se você responde aos clientes. O Google pune perfis abandonados.<br><button onclick="window.open(\'' + mapUrl + '\', \'_blank\')" style="margin-top:12px; padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#ff6b00; color:white; border:none; border-radius:5px; cursor:pointer;">🔍 Inspecionar Respostas ao Vivo</button>' 
+            titulo: '<span id="titulo-engajamento">⚠️ Risco de Engajamento e Respostas (Penalidade)</span>', 
+            desc: '<span id="desc-engajamento">O sistema reteve 20 pontos porque não foi possível confirmar se você responde aos clientes.</span><br><div id="botoes-engajamento" style="display:flex; gap:10px; margin-top:12px; flex-wrap: wrap;"><button onclick="window.open(\'' + mapUrl + '\', \'_blank\')" style="padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#ff6b00; color:white; border:none; border-radius:5px; cursor:pointer;">🔍 Inspecionar ao Vivo</button> <button onclick="validarEngajamento(this)" style="padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#10b981; color:white; border:none; border-radius:5px; cursor:pointer;">✅ Validar (Restaurar 20 pts)</button></div>' 
         });
         
         // Trava de Segurança
+        if (score < 0) score = 0;
+        
+        // Salva a nota final na variável global para o botão poder manipulá-la depois
+        pontuacaoAtual = score;
+
+        // Atualizar Ecrã
+        renderizarCards('resultados-auto', acertos, 'success');
+        renderizarCards('resultados-oportunidades', erros, erros.map(e => e.titulo.includes('🚨') ? 'danger' : 'warning'));
+
+        animarVelocimetro(score);
+        document.getElementById('report-area').style.display = 'block';
+    }
+
+    // NOVA FUNÇÃO: O "Poder do Especialista" ao vivo
+    function validarEngajamento(btnElement) {
+        // 1. Aumenta a nota em 20 pontos
+        pontuacaoAtual += 20;
+        if(pontuacaoAtual > 100) pontuacaoAtual = 100;
+        
+        // 2. Anima o velocímetro novamente com a nova nota
+        animarVelocimetro(pontuacaoAtual);
+
+        // 3. Muda os textos e esconde os botões
+        document.getElementById('titulo-engajamento').innerHTML = '✅ Engajamento Validado pelo Auditor';
+        document.getElementById('desc-engajamento').innerHTML = 'O especialista confirmou visualmente que a empresa responde ativamente aos clientes. 20 pontos restaurados!';
+        document.getElementById('botoes-engajamento').style.display = 'none';
+
+        // 4. Pinta o card amarelo de verde (Acesso ao card "pai")
+        let card = btnElement.closest('.card');
+        if(card) {
+            card.classList.remove('warning');
+            card.classList.remove('danger');
+            card.classList.add('success');
+        }
+    }
         if (score < 0) score = 0;
 
         // Atualizar Ecrã

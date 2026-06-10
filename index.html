@@ -216,9 +216,9 @@
             
             <br>
             <button style="background-color: #ff6b00; width: 100%; border: none; padding: 15px; color: white; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 16px;">Solicitar Auditoria Completa na Ignição Local</button>
-        
-
         </div>
+    </div>
+</div>
 
 <div id="map" style="display: none;"></div>
 
@@ -255,7 +255,7 @@
     function buscarDetalhes(placeId) {
         const request = {
             placeId: placeId,
-            fields: ['name', 'formatted_phone_number', 'website', 'rating', 'user_ratings_total', 'opening_hours', 'photos']
+            fields: ['name', 'formatted_phone_number', 'website', 'rating', 'user_ratings_total', 'opening_hours', 'photos', 'reviews']
         };
 
         service.getDetails(request, function(place, status) {
@@ -267,161 +267,145 @@
     }
 
     function gerarRelatorio(place) {
-        let score = 0;
+        let score = 100; // Começa com 100 e vamos subtraindo as falhas!
         let acertos = [];
         let erros = [];
 
         document.getElementById('empresa-nome').innerText = place.name;
 
-        // 1. Telefone (Max: 15)
+        // 1. Telefone (-15)
         if (place.formatted_phone_number) {
-            score += 15;
             acertos.push({ titulo: '📞 Telefone Cadastrado', desc: 'O número está público, facilitando o contato dos clientes.' });
         } else {
+            score -= 15;
             erros.push({ titulo: '🚨 Telefone Ausente', desc: 'Os clientes não conseguem ligar para a sua empresa.' });
         }
 
-        // 2. Website e Instagram (Max: 15)
+        // 2. Website e Instagram (-15 ou -10)
         if (place.website) {
             if (place.website.toLowerCase().includes('instagram.com')) {
-                score += 5;
+                score -= 10;
                 erros.push({ 
                     titulo: '⚠️ Website Apontando para Instagram', 
                     desc: 'O perfil usa uma rede social em vez de um site próprio. Isso zera o ganho de autoridade de domínio (SEO).<br><span style="color:#1a365d; font-size:13px; display:block; margin-top:5px; background:#f3f4f6; padding:5px; border-radius:4px;">🔍 <b>Link detectado:</b> <a href="' + place.website + '" target="_blank" style="color:#ff6b00; text-decoration:none;"><b>' + place.website + '</b></a></span>' 
                 });
             } else {
-                score += 15;
                 acertos.push({ 
                     titulo: '🌐 Website Vinculado', 
                     desc: 'Aumenta drasticamente a autoridade e passa credibilidade.<br><span style="color:#1a365d; font-size:13px; display:block; margin-top:5px; background:#f3f4f6; padding:5px; border-radius:4px;">🔍 <b>Raio-X:</b> Link rastreado: <a href="' + place.website + '" target="_blank" style="color:#ff6b00; text-decoration:none;"><b>' + place.website + '</b></a></span>' 
                 });
             }
         } else {
+            score -= 15;
             erros.push({ titulo: '🚨 Ausência de Website', desc: 'Recomendamos a criação de uma Landing Page para captar buscas e gerar autoridade.' });
         }
 
-        // 3. Horários (Max: 15)
+        // 3. Horários (-10)
         if (place.opening_hours && place.opening_hours.weekday_text) {
-            score += 15;
             acertos.push({ titulo: '⏰ Horários Preenchidos', desc: 'O cliente sabe exatamente quando o negócio está aberto.' });
         } else {
+            score -= 10;
             erros.push({ titulo: '🚨 Horários Indefinidos', desc: 'Pode causar frustração se um cliente for até o local e estiver fechado.' });
         }
 
-        // 4. Avaliações Nota (Max: 15)
+        // 4. Avaliações Nota Geral
         if (place.rating) {
             if (place.rating >= 4.5) {
-                score += 15;
                 acertos.push({ titulo: `⭐ Média Excelente (${place.rating})`, desc: 'Uma nota alta transmite segurança extrema ao cliente.' });
             } else if (place.rating >= 4.0) {
-                score += 5;
+                score -= 5;
                 erros.push({ titulo: `⚠️ Média Razoável (${place.rating})`, desc: 'A nota está na média, mas pode perder para concorrentes próximos.' });
             } else {
+                score -= 15;
                 erros.push({ titulo: `🚨 Média Baixa (${place.rating})`, desc: 'Sinal de alerta. Isso afasta clientes imediatamente.' });
             }
         } else {
+            score -= 20;
             erros.push({ titulo: '🚨 Sem Avaliações', desc: 'A empresa não possui reputação online validada.' });
         }
 
-        // 5. Volume e Fotos (Max: 20)
+        // 5. Volume de Avaliações
         if (place.user_ratings_total && place.user_ratings_total > 30) {
-            score += 10;
             acertos.push({ titulo: `📈 Volume Saudável (${place.user_ratings_total})`, desc: 'Mostra que o negócio é frequentado e testado por muitos.' });
         } else {
+            score -= 10;
             erros.push({ titulo: `⚠️ Baixo Volume de Avaliações (${place.user_ratings_total || 0})`, desc: 'É necessário criar campanhas urgentes para captar avaliações de clientes.' });
         }
 
-        if (place.photos && place.photos.length > 0) {
-            score += 10;
-            acertos.push({ titulo: '📸 Presença Visual', desc: 'A empresa possui banco de imagens público, tornando o perfil atrativo.' });
-        } else {
-            erros.push({ titulo: '🚨 Sem Banco de Imagens', desc: 'Perfis sem fotos recebem 42% menos solicitações de rotas.' });
-        }
-
-        // 5.5 Comparativo de Avaliações (Tendência Recente)
-        if (place.reviews && place.reviews.length > 0 && place.rating) {
+        // 6. Tendência e Recência
+        if (place.reviews && place.reviews.length > 0) {
             let somaRecentes = 0;
-            place.reviews.forEach(review => {
-                somaRecentes += review.rating;
-            });
-            
-            // Calcula a média apenas das avaliações recentes trazidas pela API
+            place.reviews.forEach(review => { somaRecentes += review.rating; });
             let mediaRecentes = (somaRecentes / place.reviews.length).toFixed(1);
             let notaGeral = place.rating.toFixed(1);
 
             if (mediaRecentes > notaGeral) {
-                acertos.push({
-                    titulo: `📈 Tendência de Avaliações: Aumentando`,
-                    desc: `Excelente! A média dos últimos clientes (${mediaRecentes}) está superior ao seu histórico geral (${notaGeral}).`
-                });
+                acertos.push({ titulo: `📈 Tendência de Avaliações: Aumentando`, desc: `Excelente! A média dos últimos clientes (${mediaRecentes}) está superior ao seu histórico geral (${notaGeral}).` });
             } else if (mediaRecentes === notaGeral) {
-                acertos.push({
-                    titulo: `⚖️ Tendência de Avaliações: Estável`,
-                    desc: `A média das avaliações recentes (${mediaRecentes}) acompanha o seu histórico geral (${notaGeral}).`
-                });
+                acertos.push({ titulo: `⚖️ Tendência de Avaliações: Estável`, desc: `A média das avaliações recentes (${mediaRecentes}) acompanha o seu histórico geral (${notaGeral}).` });
             } else {
-                erros.push({
-                    titulo: `📉 Tendência de Avaliações: Caindo`,
-                    desc: `Alerta! Os clientes recentes deram notas (média ${mediaRecentes}) piores que o seu histórico geral (${notaGeral}). O atendimento pode ter sofrido quedas recentes.`
-                });
+                erros.push({ titulo: `📉 Tendência de Avaliações: Caindo`, desc: `Alerta! Os clientes recentes deram notas (média ${mediaRecentes}) piores que o seu histórico geral (${notaGeral}).` });
             }
-        }
-        // 5.6 Recência da Última Avaliação (Fator de Frescor do Google)
-        if (place.reviews && place.reviews.length > 0) {
-            // Ordena as avaliações para garantir que a primeira é a mais recente
+
             let avaliacoesOrdenadas = [...place.reviews].sort((a, b) => b.time - a.time);
             let dataUltimaAvaliacao = avaliacoesOrdenadas[0].time; 
-            
-            // Calcula a diferença de dias entre hoje e a última avaliação
             let hoje = Math.floor(Date.now() / 1000);
             let diasAtras = Math.floor((hoje - dataUltimaAvaliacao) / 86400);
 
             if (diasAtras <= 30) {
-                // Menos de um mês - Zona Verde
-                acertos.push({
-                    titulo: `⏱️ Recência: Perfil Quente (${diasAtras} dias atrás)`,
-                    desc: `Excelente! Sua última avaliação é recente. O Google adora perfis que recebem feedback constante e prioriza isso no ranqueamento.`
-                });
+                acertos.push({ titulo: `⏱️ Recência: Perfil Quente (${diasAtras} dias atrás)`, desc: `Sua última avaliação é recente. O Google prioriza isso no ranqueamento.` });
             } else if (diasAtras <= 90) {
-                // Entre 1 e 3 meses - Zona Amarela (Perde 5 pontos)
                 score -= 5;
-                erros.push({
-                    titulo: `⚠️ Avaliações Desatualizadas (${diasAtras} dias atrás)`,
-                    desc: `Faz mais de um mês que você não recebe avaliações. O algoritmo do Google começa a diminuir o seu alcance local após 30 dias sem novidades.`
-                });
+                erros.push({ titulo: `⚠️ Avaliações Desatualizadas (${diasAtras} dias atrás)`, desc: `Faz mais de um mês que você não recebe avaliações.` });
             } else {
-                // Mais de 3 meses - Zona Vermelha (Perde 10 pontos)
                 score -= 10;
-                erros.push({
-                    titulo: `🚨 Abandono de Avaliações (${diasAtras} dias atrás)`,
-                    desc: `O seu perfil está esfriando! Concorrentes com avaliações frescas estão passando na sua frente. Mais de 90 dias sem avaliações afasta novos clientes.`
-                });
+                erros.push({ titulo: `🚨 Abandono de Avaliações (${diasAtras} dias atrás)`, desc: `Mais de 90 dias sem avaliações afasta novos clientes.` });
             }
         }
-        
-        // 6. Nome do Negócio (Risco de Spam)
+
+        // 7. Nome do Negócio (Anti-Spam)
         let tamanhoNome = place.name.length;
         if (tamanhoNome <= 50) {
             acertos.push({ titulo: '✅ Nome do Negócio Otimizado', desc: `O nome "${place.name}" possui um tamanho seguro (${tamanhoNome} caracteres). Não apresenta risco de punição por spam.` });
         } else {
             score -= 10;
-            erros.push({ titulo: '🚨 Risco de Punição no Nome', desc: `O nome cadastrado é muito longo (${tamanhoNome} caracteres). O Google pode suspender seu perfil se entender que você está forçando palavras-chave no nome oficial.` });
+            erros.push({ titulo: '🚨 Risco de Punição no Nome', desc: `O nome cadastrado é muito longo (${tamanhoNome} caracteres). O Google pode suspender seu perfil se entender que é Keyword Stuffing.` });
         }
 
-        // 7. Volume de Fotos (Presença Visual)
+        // 8. Volume Geral de Fotos
         if (place.photos && place.photos.length >= 3) {
             acertos.push({ titulo: `📸 Presença Visual Forte (+${place.photos.length} fotos detectadas)`, desc: 'A empresa possui um bom banco de imagens público, tornando o perfil atrativo para clientes.' });
         } else if (place.photos && place.photos.length > 0) {
             score -= 5;
-            erros.push({ titulo: `⚠️ Poucas Fotos Detectadas (${place.photos.length})`, desc: 'O volume de mídia está abaixo do recomendado. Perfis com poucas fotos perdem muito engajamento.' });
+            erros.push({ titulo: `⚠️ Poucas Fotos Detectadas (${place.photos.length})`, desc: 'O volume de mídia está abaixo do recomendado. Perfis com poucas fotos perdem engajamento.' });
         } else {
             score -= 10;
             erros.push({ titulo: '🚨 Nenhuma Foto Detectada', desc: 'Perfis sem imagens recebem 42% menos solicitações de rotas. O cliente não confia no que não vê.' });
         }
-    // 8. PENALIDADE FIXA E PROPOSITAL: Risco de Engajamento (-20 pontos)
+
+        // 9. Mídias Publicadas por Clientes (UGC)
+        if (place.photos && place.photos.length > 0) {
+            let fotosDeClientes = 0;
+            place.photos.forEach(photo => {
+                let creditos = photo.html_attributions && photo.html_attributions.length > 0 ? photo.html_attributions[0] : "";
+                if (creditos && !creditos.includes(place.name)) {
+                    fotosDeClientes++;
+                }
+            });
+
+            if (fotosDeClientes >= 3) {
+                acertos.push({ titulo: `📸 Mídia de Clientes: Excelente (${fotosDeClientes} em destaque)`, desc: 'O perfil possui fotos publicadas por clientes. Isso estabelece alta confiança e prova social.' });
+            } else if (fotosDeClientes > 0) {
+                score -= 5;
+                erros.push({ titulo: `⚠️ Mídia de Clientes: Razoável (${fotosDeClientes} em destaque)`, desc: `Não existe mídia de clientes suficiente. Quantidade atual: ${fotosDeClientes}. Recomendada: 3.` });
+            } else {
+                score -= 10;
+                erros.push({ titulo: `🚨 Mídia de Clientes: Fraca (0 em destaque)`, desc: `O Google não detectou fotos de clientes entre as imagens principais. Isso reduz a credibilidade.` });
+            }
+        }
+
+        // 10. PENALIDADE FIXA E PROPOSITAL: Risco de Engajamento
         score -= 20;
-        
-        // Constrói a URL oficial do Maps forçando o nome da empresa e o Place ID exato
         let nomeBuscado = encodeURIComponent(place.name);
         let mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + nomeBuscado + '&query_place_id=' + place.place_id;
         
@@ -430,17 +414,16 @@
             desc: 'O sistema reteve 20 pontos porque não foi possível confirmar se você responde aos clientes. O Google pune perfis abandonados.<br><button onclick="window.open(\'' + mapUrl + '\', \'_blank\')" style="margin-top:12px; padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#ff6b00; color:white; border:none; border-radius:5px; cursor:pointer;">🔍 Inspecionar Respostas ao Vivo</button>' 
         });
         
-        // Trava de Segurança: A nota nunca pode ser menor que Zero
+        // Trava de Segurança
         if (score < 0) score = 0;
 
         // Atualizar Ecrã
         renderizarCards('resultados-auto', acertos, 'success');
         renderizarCards('resultados-oportunidades', erros, erros.map(e => e.titulo.includes('🚨') ? 'danger' : 'warning'));
 
-        // Atualizar Velocímetro
         animarVelocimetro(score);
         document.getElementById('report-area').style.display = 'block';
-    } // Fim da função gerarRelatorio
+    }
 
     function renderizarCards(containerId, itens, typeClass) {
         const container = document.getElementById(containerId);
@@ -455,6 +438,7 @@
             `;
         });
     }
+
     function animarVelocimetro(score) {
         const circle = document.getElementById('score-circle');
         const numText = document.getElementById('score-number');
@@ -477,7 +461,6 @@
             numText.style.color = color;
         }, 100);
     }
-
 </script>
 </body>
 </html>

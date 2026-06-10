@@ -418,8 +418,39 @@
             score -= 10;
             erros.push({ titulo: '🚨 Nenhuma Foto Detectada', desc: 'Perfis sem imagens recebem 42% menos solicitações de rotas. O cliente não confia no que não vê.' });
         }
-    }
+    // 8. PENALIDADE FIXA E PROPOSITAL: Risco de Engajamento (-20 pontos)
+        score -= 20;
+        let mapUrl = 'https://www.google.com/maps/search/?api=1&query=Google&query_place_id=' + place.place_id;
+        erros.push({ 
+            titulo: '⚠️ Risco de Engajamento e Respostas (Penalidade Automática)', 
+            desc: 'O sistema reteve 20 pontos porque não foi possível confirmar se responde aos clientes. O Google pune perfis abandonados.<br><button onclick="window.open(\'' + mapUrl + '\', \'_blank\')" style="margin-top:12px; padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#ff6b00; color:white; border:none; border-radius:5px; cursor:pointer;">🔍 Inspecionar Respostas ao Vivo</button>' 
+        });
 
+        // Trava de Segurança: A nota nunca pode ser menor que Zero
+        if (score < 0) score = 0;
+
+        // Atualizar Ecrã
+        renderizarCards('resultados-auto', acertos, 'success');
+        renderizarCards('resultados-oportunidades', erros, erros.map(e => e.titulo.includes('🚨') ? 'danger' : 'warning'));
+
+        // Atualizar Velocímetro
+        animarVelocimetro(score);
+        document.getElementById('report-area').style.display = 'block';
+    } // Fim da função gerarRelatorio
+
+    function renderizarCards(containerId, itens, typeClass) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        itens.forEach((item, index) => {
+            let finalClass = Array.isArray(typeClass) ? typeClass[index] : typeClass;
+            container.innerHTML += `
+                <div class="card ${finalClass}">
+                    <div class="card-header">${item.titulo}</div>
+                    <div class="card-desc">${item.desc}</div>
+                </div>
+            `;
+        });
+    }
     function animarVelocimetro(score) {
         const circle = document.getElementById('score-circle');
         const numText = document.getElementById('score-number');

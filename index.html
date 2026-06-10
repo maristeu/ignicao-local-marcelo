@@ -271,12 +271,26 @@
             erros.push({ titulo: '🚨 Telefone Ausente', desc: 'Os clientes não conseguem ligar para a sua empresa.' });
         }
 
-        // 2. Website
+        // 2. Website (Com Modo Raio-X e Filtro de Instagram)
         if (place.website) {
-            score += 20;
-            acertos.push({ titulo: '🌐 Website Vinculado', desc: 'Aumenta drasticamente a autoridade e passa credibilidade.' });
+            if (place.website.toLowerCase().includes('instagram.com')) {
+                // É um link do Instagram - Zona Amarela
+                score += 10;
+                erros.push({ 
+                    titulo: '⚠️ Website Apontando para Instagram', 
+                    desc: 'O perfil usa uma rede social em vez de um site próprio. Isso zera o ganho de autoridade de domínio (SEO) no Google.<br><span style="color:#1a365d; font-size:13px; display:block; margin-top:5px; background:#f3f4f6; padding:5px; border-radius:4px;">🔍 <b>Link detectado:</b> <a href="' + place.website + '" target="_blank" style="color:#ff6b00; text-decoration:none;"><b>' + place.website + '</b></a></span>' 
+                });
+            } else {
+                // É um site real - Zona Verde
+                score += 20;
+                acertos.push({ 
+                    titulo: '🌐 Website Vinculado', 
+                    desc: 'Aumenta drasticamente a autoridade e passa credibilidade.<br><span style="color:#1a365d; font-size:13px; display:block; margin-top:5px; background:#f3f4f6; padding:5px; border-radius:4px;">🔍 <b>Raio-X do Algoritmo:</b> Link rastreado: <a href="' + place.website + '" target="_blank" style="color:#ff6b00; text-decoration:none;"><b>' + place.website + '</b></a></span>' 
+                });
+            }
         } else {
-            erros.push({ titulo: '🚨 Ausência de Website', desc: 'Recomendamos a criação de uma Landing Page para captar buscas.' });
+            // Sem site - Zona Vermelha
+            erros.push({ titulo: '🚨 Ausência de Website', desc: 'Recomendamos a criação de uma Landing Page para captar buscas e gerar autoridade.' });
         }
 
         // 3. Horários

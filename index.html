@@ -263,63 +263,60 @@
 
         document.getElementById('empresa-nome').innerText = place.name;
 
-        // 1. Telefone
+        // 1. Telefone (Max: 15)
         if (place.formatted_phone_number) {
-            score += 20;
+            score += 15;
             acertos.push({ titulo: '📞 Telefone Cadastrado', desc: 'O número está público, facilitando o contato dos clientes.' });
         } else {
             erros.push({ titulo: '🚨 Telefone Ausente', desc: 'Os clientes não conseguem ligar para a sua empresa.' });
         }
 
-        // 2. Website (Com Modo Raio-X e Filtro de Instagram)
+        // 2. Website e Instagram (Max: 15)
         if (place.website) {
             if (place.website.toLowerCase().includes('instagram.com')) {
-                // É um link do Instagram - Zona Amarela
-                score += 10;
+                score += 5;
                 erros.push({ 
                     titulo: '⚠️ Website Apontando para Instagram', 
-                    desc: 'O perfil usa uma rede social em vez de um site próprio. Isso zera o ganho de autoridade de domínio (SEO) no Google.<br><span style="color:#1a365d; font-size:13px; display:block; margin-top:5px; background:#f3f4f6; padding:5px; border-radius:4px;">🔍 <b>Link detectado:</b> <a href="' + place.website + '" target="_blank" style="color:#ff6b00; text-decoration:none;"><b>' + place.website + '</b></a></span>' 
+                    desc: 'O perfil usa uma rede social em vez de um site próprio. Isso zera o ganho de autoridade de domínio (SEO).<br><span style="color:#1a365d; font-size:13px; display:block; margin-top:5px; background:#f3f4f6; padding:5px; border-radius:4px;">🔍 <b>Link detectado:</b> <a href="' + place.website + '" target="_blank" style="color:#ff6b00; text-decoration:none;"><b>' + place.website + '</b></a></span>' 
                 });
             } else {
-                // É um site real - Zona Verde
-                score += 20;
+                score += 15;
                 acertos.push({ 
                     titulo: '🌐 Website Vinculado', 
-                    desc: 'Aumenta drasticamente a autoridade e passa credibilidade.<br><span style="color:#1a365d; font-size:13px; display:block; margin-top:5px; background:#f3f4f6; padding:5px; border-radius:4px;">🔍 <b>Raio-X do Algoritmo:</b> Link rastreado: <a href="' + place.website + '" target="_blank" style="color:#ff6b00; text-decoration:none;"><b>' + place.website + '</b></a></span>' 
+                    desc: 'Aumenta drasticamente a autoridade e passa credibilidade.<br><span style="color:#1a365d; font-size:13px; display:block; margin-top:5px; background:#f3f4f6; padding:5px; border-radius:4px;">🔍 <b>Raio-X:</b> Link rastreado: <a href="' + place.website + '" target="_blank" style="color:#ff6b00; text-decoration:none;"><b>' + place.website + '</b></a></span>' 
                 });
             }
         } else {
-            // Sem site - Zona Vermelha
             erros.push({ titulo: '🚨 Ausência de Website', desc: 'Recomendamos a criação de uma Landing Page para captar buscas e gerar autoridade.' });
         }
 
-        // 3. Horários
+        // 3. Horários (Max: 15)
         if (place.opening_hours && place.opening_hours.weekday_text) {
-            score += 20;
+            score += 15;
             acertos.push({ titulo: '⏰ Horários Preenchidos', desc: 'O cliente sabe exatamente quando o negócio está aberto.' });
         } else {
             erros.push({ titulo: '🚨 Horários Indefinidos', desc: 'Pode causar frustração se um cliente for até o local e estiver fechado.' });
         }
 
-        // 4. Avaliações (Nota)
+        // 4. Avaliações Nota (Max: 15)
         if (place.rating) {
             if (place.rating >= 4.5) {
-                score += 20;
-                acertos.push({ titulo: `⭐ Média de Avaliações Excelente (${place.rating})`, desc: 'Uma nota alta transmite segurança extrema ao cliente.' });
+                score += 15;
+                acertos.push({ titulo: `⭐ Média Excelente (${place.rating})`, desc: 'Uma nota alta transmite segurança extrema ao cliente.' });
             } else if (place.rating >= 4.0) {
-                score += 10;
-                erros.push({ titulo: `⚠️ Média de Avaliações Razoável (${place.rating})`, desc: 'A nota está na média, mas pode perder para concorrentes próximos.' });
+                score += 5;
+                erros.push({ titulo: `⚠️ Média Razoável (${place.rating})`, desc: 'A nota está na média, mas pode perder para concorrentes próximos.' });
             } else {
-                erros.push({ titulo: `🚨 Média de Avaliações Baixa (${place.rating})`, desc: 'Sinal de alerta. Isso afasta clientes imediatamente.' });
+                erros.push({ titulo: `🚨 Média Baixa (${place.rating})`, desc: 'Sinal de alerta. Isso afasta clientes imediatamente.' });
             }
         } else {
             erros.push({ titulo: '🚨 Sem Avaliações', desc: 'A empresa não possui reputação online validada.' });
         }
 
-        // 5. Volume e Fotos
-        if (place.user_ratings_total && place.user_ratings_total > 20) {
+        // 5. Volume e Fotos (Max: 20)
+        if (place.user_ratings_total && place.user_ratings_total > 30) {
             score += 10;
-            acertos.push({ titulo: `📈 Volume de Avaliações Saudável (${place.user_ratings_total})`, desc: 'Mostra que o negócio é frequentado e testado por muitos.' });
+            acertos.push({ titulo: `📈 Volume Saudável (${place.user_ratings_total})`, desc: 'Mostra que o negócio é frequentado e testado por muitos.' });
         } else {
             erros.push({ titulo: `⚠️ Baixo Volume de Avaliações (${place.user_ratings_total || 0})`, desc: 'É necessário criar campanhas urgentes para captar avaliações de clientes.' });
         }
@@ -331,14 +328,16 @@
             erros.push({ titulo: '🚨 Sem Banco de Imagens', desc: 'Perfis sem fotos recebem 42% menos solicitações de rotas.' });
         }
 
+        // 6. PENALIDADE PROPOSITAL: Risco de Engajamento (-20 pontos do total ideal de 100)
+        // Este card vai forçar a barra de erros a aparecer sempre, mesmo que o cliente tenha tudo perfeito acima.
+        erros.push({ 
+            titulo: '⚠️ Risco de Engajamento e Respostas (Penalidade Automática)', 
+            desc: 'O sistema reteve 20 pontos porque não foi possível confirmar se você responde aos clientes ou faz postagens regulares. O Google pune perfis abandonados.<br><button onclick="window.open(\'https://www.google.com/maps/search/?api=1&query=Google&query_place_id=' + place.place_id + '\', \'_blank\')" style="margin-top:12px; padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#ff6b00; color:white; border:none; border-radius:5px; cursor:pointer;">🔍 Inspecionar Respostas ao Vivo</button>' 
+        });
+
         // Atualizar Tela
         renderizarCards('resultados-auto', acertos, 'success');
-        
-        if(erros.length > 0) {
-            renderizarCards('resultados-oportunidades', erros, erros.map(e => e.titulo.includes('🚨') ? 'danger' : 'warning'));
-        } else {
-            document.getElementById('resultados-oportunidades').innerHTML = '<p style="color: green;">Perfil blindado! Não há alertas básicos imediatos.</p>';
-        }
+        renderizarCards('resultados-oportunidades', erros, erros.map(e => e.titulo.includes('🚨') ? 'danger' : 'warning'));
 
         // Atualizar Velocímetro
         animarVelocimetro(score);
@@ -349,7 +348,6 @@
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         itens.forEach((item, index) => {
-            // Lógica para aplicar a classe danger ou warning caso typeClass seja um array
             let finalClass = Array.isArray(typeClass) ? typeClass[index] : typeClass;
             container.innerHTML += `
                 <div class="card ${finalClass}">
@@ -367,22 +365,22 @@
         
         let color = 'var(--danger)';
         if(score >= 50) color = 'var(--warning)';
-        if(score >= 80) color = 'var(--success)';
+        if(score >= 75) color = 'var(--success)';
 
         let statusString = 'Crítico (Perdendo Clientes)';
         if(score >= 50) statusString = 'Razoável (Deixando dinheiro na mesa)';
-        if(score >= 80) statusString = 'Excelente (Bem Otimizado)';
+        if(score >= 75) statusString = 'Bom, mas Incompleto';
 
         statusText.innerText = `Status: ${statusString}`;
         statusText.style.color = color;
 
-        // Animação CSS do círculo
         setTimeout(() => {
             circle.style.background = `conic-gradient(${color} ${score}%, #e5e7eb ${score}%)`;
             numText.innerText = score;
             numText.style.color = color;
         }, 100);
     }
+
 </script>
 </body>
 </html>

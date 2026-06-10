@@ -198,17 +198,27 @@
         <div id="resultados-oportunidades"></div>
 
         <div class="manual-audit">
-            <h3>🔒 Análise Especializada Pendente</h3>
-            <p style="font-size: 14px; margin-bottom: 15px;">Os itens abaixo exigem uma varredura profunda que nossa equipe realiza internamente. Essas falhas geralmente causam perda de clientes para a concorrência:</p>
-            <div class="manual-item">🔴 <b>Avaliações sem Resposta:</b> Impacta diretamente na retenção do cliente.</div>
-            <div class="manual-item">🔴 <b>Atualização de Posts (GMB):</b> O Google prioriza perfis com postagens recentes.</div>
-            <div class="manual-item">🔴 <b>Palavras-chave na Descrição:</b> A descrição atual possui os termos que o seu cliente pesquisa?</div>
-            <div class="manual-item">🔴 <b>Catálogo de Produtos/Serviços:</b> Facilita a compra por impulso direto no mapa.</div>
+            <h3>🔒 Análise Especializada (Itens Pendentes)</h3>
+            <p style="font-size: 14px; margin-bottom: 15px;">Os itens abaixo são vitais para o SEO Local (representam quase 40% do algoritmo), mas o Google bloqueia a leitura pública. Nossa equipe precisa analisá-los manualmente:</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="manual-item">🔴 <b>Respostas de Avaliações</b></div>
+                <div class="manual-item">🔴 <b>Palavras-chave nas Avaliações</b></div>
+                <div class="manual-item">🔴 <b>Atualização de Posts (Updates)</b></div>
+                <div class="manual-item">🔴 <b>Catálogo de Produtos/Serviços</b></div>
+                <div class="manual-item">🔴 <b>Horários Especiais e Feriados</b></div>
+                <div class="manual-item">🔴 <b>Data de Fundação</b></div>
+                <div class="manual-item">🔴 <b>Foto de Capa e Logotipo</b></div>
+                <div class="manual-item">🔴 <b>Presença de Vídeos Oficiais</b></div>
+                <div class="manual-item">🔴 <b>Avaliações sem Comentário</b></div>
+                <div class="manual-item">🔴 <b>SEO na Descrição da Empresa</b></div>
+            </div>
+            
             <br>
-            <button style="background-color: #ff6b00; width: 100%;">Solicitar Auditoria Completa</button>
+            <button style="background-color: #ff6b00; width: 100%; border: none; padding: 15px; color: white; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 16px;">Solicitar Auditoria Completa na Ignição Local</button>
+        
+
         </div>
-    </div>
-</div>
 
 <div id="map" style="display: none;"></div>
 
@@ -389,34 +399,25 @@
             }
         }
         
-        // 6. PENALIDADE PROPOSITAL: Risco de Engajamento (-20 pontos do total ideal de 100)
-        // Este card vai forçar a barra de erros a aparecer sempre, mesmo que o cliente tenha tudo perfeito acima.
-        erros.push({ 
-            titulo: '⚠️ Risco de Engajamento e Respostas (Penalidade Automática)', 
-            desc: 'O sistema reteve 20 pontos porque não foi possível confirmar se você responde aos clientes ou faz postagens regulares. O Google pune perfis abandonados.<br><button onclick="window.open(\'https://www.google.com/maps/search/?api=1&query=Google&query_place_id=' + place.place_id + '\', \'_blank\')" style="margin-top:12px; padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#ff6b00; color:white; border:none; border-radius:5px; cursor:pointer;">🔍 Inspecionar Respostas ao Vivo</button>' 
-        });
+        // 6. Nome do Negócio (Risco de Spam)
+        let tamanhoNome = place.name.length;
+        if (tamanhoNome <= 50) {
+            acertos.push({ titulo: '✅ Nome do Negócio Otimizado', desc: `O nome "${place.name}" possui um tamanho seguro (${tamanhoNome} caracteres). Não apresenta risco de punição por spam.` });
+        } else {
+            score -= 10;
+            erros.push({ titulo: '🚨 Risco de Punição no Nome', desc: `O nome cadastrado é muito longo (${tamanhoNome} caracteres). O Google pode suspender seu perfil se entender que você está forçando palavras-chave no nome oficial.` });
+        }
 
-        // Atualizar Tela
-        renderizarCards('resultados-auto', acertos, 'success');
-        renderizarCards('resultados-oportunidades', erros, erros.map(e => e.titulo.includes('🚨') ? 'danger' : 'warning'));
-
-        // Atualizar Velocímetro
-        animarVelocimetro(score);
-        document.getElementById('report-area').style.display = 'block';
-    }
-
-    function renderizarCards(containerId, itens, typeClass) {
-        const container = document.getElementById(containerId);
-        container.innerHTML = '';
-        itens.forEach((item, index) => {
-            let finalClass = Array.isArray(typeClass) ? typeClass[index] : typeClass;
-            container.innerHTML += `
-                <div class="card ${finalClass}">
-                    <div class="card-header">${item.titulo}</div>
-                    <div class="card-desc">${item.desc}</div>
-                </div>
-            `;
-        });
+        // 7. Volume de Fotos (Presença Visual)
+        if (place.photos && place.photos.length >= 3) {
+            acertos.push({ titulo: `📸 Presença Visual Forte (+${place.photos.length} fotos detectadas)`, desc: 'A empresa possui um bom banco de imagens público, tornando o perfil atrativo para clientes.' });
+        } else if (place.photos && place.photos.length > 0) {
+            score -= 5;
+            erros.push({ titulo: `⚠️ Poucas Fotos Detectadas (${place.photos.length})`, desc: 'O volume de mídia está abaixo do recomendado. Perfis com poucas fotos perdem muito engajamento.' });
+        } else {
+            score -= 10;
+            erros.push({ titulo: '🚨 Nenhuma Foto Detectada', desc: 'Perfis sem imagens recebem 42% menos solicitações de rotas. O cliente não confia no que não vê.' });
+        }
     }
 
     function animarVelocimetro(score) {

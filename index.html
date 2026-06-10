@@ -255,7 +255,7 @@
     function buscarDetalhes(placeId) {
         const request = {
             placeId: placeId,
-            fields: ['name', 'formatted_phone_number', 'website', 'rating', 'user_ratings_total', 'opening_hours', 'photos', 'reviews']
+            fields: ['name', 'formatted_phone_number', 'website', 'rating', 'user_ratings_total', 'opening_hours', 'photos', 'reviews', 'types']
         };
 
         service.getDetails(request, function(place, status) {
@@ -396,7 +396,25 @@
                 });
             }
         }
-        
+
+        // 6.7 Categorias de Serviço (Expansão de Nicho)
+        if (place.types) {
+            // O Google sempre manda 'point_of_interest' e 'establishment' por padrão. Vamos filtrar isso.
+            let categoriasReais = place.types.filter(t => t !== 'point_of_interest' && t !== 'establishment');
+
+            if (categoriasReais.length > 1) {
+                acertos.push({
+                    titulo: `🎯 Categorias Secundárias Otimizadas`,
+                    desc: `O perfil explora múltiplas categorias de serviço. Isso expande sua área de cobertura orgânica e atrai buscas variadas.`
+                });
+            } else if (categoriasReais.length === 1) {
+                score -= 5;
+                erros.push({
+                    titulo: `⚠️ Falta de Categorias Secundárias`,
+                    desc: `A empresa está utilizando apenas uma categoria principal. Adicionar categorias secundárias relevantes pode aumentar seu alcance em até 85%.`
+                });
+            }
+        }        
         // 7. Nome do Negócio (Anti-Spam)
         let tamanhoNome = place.name.length;
         if (tamanhoNome <= 50) {

@@ -202,16 +202,13 @@
             <p style="font-size: 14px; margin-bottom: 15px;">Os itens abaixo são vitais para o SEO Local (representam quase 40% do algoritmo), mas o Google bloqueia a leitura pública. Nossa equipe precisa analisá-los manualmente:</p>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="manual-item">🔴 <b>Respostas de Avaliações</b></div>
-                <div class="manual-item">🔴 <b>Palavras-chave nas Avaliações</b></div>
-                <div class="manual-item">🔴 <b>Atualização de Posts (Updates)</b></div>
-                <div class="manual-item">🔴 <b>Catálogo de Produtos/Serviços</b></div>
                 <div class="manual-item">🔴 <b>Horários Especiais e Feriados</b></div>
                 <div class="manual-item">🔴 <b>Data de Fundação</b></div>
                 <div class="manual-item">🔴 <b>Foto de Capa e Logotipo</b></div>
                 <div class="manual-item">🔴 <b>Presença de Vídeos Oficiais</b></div>
-                <div class="manual-item">🔴 <b>Avaliações sem Comentário</b></div>
                 <div class="manual-item">🔴 <b>SEO na Descrição da Empresa</b></div>
+                <div class="manual-item">🔴 <b>Atualização de Posts (Updates)</b></div>
+                <div class="manual-item">🔴 <b>Catálogo de Produtos/Serviços</b></div>
             </div>
             
             <br>
@@ -225,7 +222,7 @@
 <script>
     let map;
     let service;
-    let pontuacaoAtual = 0; //
+    let pontuacaoAtual = 0; // Variável Global do Auditor
 
     function iniciarAuditoria() {
         const input = document.getElementById('empresa-input').value;
@@ -237,7 +234,7 @@
         document.getElementById('loading').style.display = 'block';
         document.getElementById('report-area').style.display = 'none';
 
-        const mapLocation = new google.maps.LatLng(-23.626, -45.414); // Caraguatatuba ref
+        const mapLocation = new google.maps.LatLng(-23.626, -45.414);
         map = new google.maps.Map(document.getElementById('map'), { center: mapLocation, zoom: 15 });
         service = new google.maps.places.PlacesService(map);
 
@@ -268,7 +265,7 @@
     }
 
     function gerarRelatorio(place) {
-        let score = 100; // Começa com 100 e vamos subtraindo as falhas!
+        let score = 100;
         let acertos = [];
         let erros = [];
 
@@ -309,7 +306,7 @@
             erros.push({ titulo: '🚨 Horários Indefinidos', desc: 'Pode causar frustração se um cliente for até o local e estiver fechado.' });
         }
 
-        // 4. Avaliações Nota Geral
+        // 4. Avaliações Nota Geral (-5 ou -15)
         if (place.rating) {
             if (place.rating >= 4.5) {
                 acertos.push({ titulo: `⭐ Média Excelente (${place.rating})`, desc: 'Uma nota alta transmite segurança extrema ao cliente.' });
@@ -325,7 +322,7 @@
             erros.push({ titulo: '🚨 Sem Avaliações', desc: 'A empresa não possui reputação online validada.' });
         }
 
-        // 5. Volume de Avaliações
+        // 5. Volume de Avaliações (-10)
         if (place.user_ratings_total && place.user_ratings_total > 30) {
             acertos.push({ titulo: `📈 Volume Saudável (${place.user_ratings_total})`, desc: 'Mostra que o negócio é frequentado e testado por muitos.' });
         } else {
@@ -333,10 +330,18 @@
             erros.push({ titulo: `⚠️ Baixo Volume de Avaliações (${place.user_ratings_total || 0})`, desc: 'É necessário criar campanhas urgentes para captar avaliações de clientes.' });
         }
 
-        // 6. Tendência e Recência
+        // 6. Inteligência de Avaliações (Tendência, Recência, Qualidade)
         if (place.reviews && place.reviews.length > 0) {
             let somaRecentes = 0;
-            place.reviews.forEach(review => { somaRecentes += review.rating; });
+            let comTexto = 0;
+            
+            place.reviews.forEach(review => { 
+                somaRecentes += review.rating; 
+                if (review.text && review.text.trim().length > 10) {
+                    comTexto++;
+                }
+            });
+            
             let mediaRecentes = (somaRecentes / place.reviews.length).toFixed(1);
             let notaGeral = place.rating.toFixed(1);
 
@@ -362,82 +367,43 @@
                 score -= 10;
                 erros.push({ titulo: `🚨 Abandono de Avaliações (${diasAtras} dias atrás)`, desc: `Mais de 90 dias sem avaliações afasta novos clientes.` });
             }
-        }
 
-
-        // 6.5 Qualidade das Avaliações (Comentários Escritos)
-        if (place.reviews && place.reviews.length > 0) {
-            let comTexto = 0;
-            
-            // O robô varre as avaliações e verifica se existe um texto com pelo menos algumas palavras
-            place.reviews.forEach(review => {
-                if (review.text && review.text.trim().length > 10) {
-                    comTexto++;
-                }
-            });
-            
-            let percentual = Math.round((comTexto / place.reviews.length) * 100);
-
-            if (percentual >= 60) {
-                acertos.push({ 
-                    titulo: `💬 Qualidade de Avaliações: Alta (${percentual}% com texto)`, 
-                    desc: `A maioria dos seus clientes recentes deixou comentários escritos. Isso é excelente, pois injeta palavras-chave orgânicas no algoritmo do Google.` 
-                });
-            } else if (percentual > 0) {
+            let percentualTexto = Math.round((comTexto / place.reviews.length) * 100);
+            if (percentualTexto >= 60) {
+                acertos.push({ titulo: `💬 Qualidade de Avaliações: Alta (${percentualTexto}% com texto)`, desc: `A maioria dos seus clientes recentes deixou comentários escritos.` });
+            } else if (percentualTexto > 0) {
                 score -= 5;
-                erros.push({ 
-                    titulo: `⚠️ Avaliações sem Comentário (${100 - percentual}% vazias)`, 
-                    desc: `Muitos clientes deixam apenas a nota em estrelas, sem escrever nada. Incentive descrições, pois o Google usa o texto do cliente para ranquear o seu serviço.` 
-                });
+                erros.push({ titulo: `⚠️ Avaliações sem Comentário (${100 - percentualTexto}% vazias)`, desc: `Muitos clientes deixam apenas estrelas. O Google usa o texto para ranquear o seu serviço.` });
             } else {
                 score -= 10;
-                erros.push({ 
-                    titulo: `🚨 Avaliações Vazias (0% com texto)`, 
-                    desc: `Nenhum dos seus últimos clientes escreveu um comentário. Notas altas sem texto possuem um impacto muito fraco no ranqueamento local.` 
-                });
+                erros.push({ titulo: `🚨 Avaliações Vazias (0% com texto)`, desc: `Nenhum dos seus últimos clientes escreveu um comentário.` });
             }
         }
 
-        // 6.7 Categorias de Serviço (Expansão de Nicho)
+        // 7. Categorias de Serviço
         if (place.types) {
-            // O Google sempre manda 'point_of_interest' e 'establishment' por padrão. Vamos filtrar isso.
             let categoriasReais = place.types.filter(t => t !== 'point_of_interest' && t !== 'establishment');
-
             if (categoriasReais.length > 1) {
-                acertos.push({
-                    titulo: `🎯 Categorias Secundárias Otimizadas`,
-                    desc: `O perfil explora múltiplas categorias de serviço. Isso expande sua área de cobertura orgânica e atrai buscas variadas.`
-                });
+                acertos.push({ titulo: `🎯 Categorias Secundárias Otimizadas`, desc: `O perfil explora múltiplas categorias de serviço, expandindo sua área de cobertura orgânica.` });
             } else if (categoriasReais.length === 1) {
                 score -= 5;
-                erros.push({
-                    titulo: `⚠️ Falta de Categorias Secundárias`,
-                    desc: `A empresa está utilizando apenas uma categoria principal. Adicionar categorias secundárias relevantes pode aumentar seu alcance em até 85%.`
-                });
+                erros.push({ titulo: `⚠️ Falta de Categorias Secundárias`, desc: `A empresa está utilizando apenas uma categoria. Adicionar categorias secundárias aumenta seu alcance.` });
             }
-        }        
-        // 7. Nome do Negócio (Anti-Spam)
+        }
+
+        // 8. Nome do Negócio (Anti-Spam)
         let tamanhoNome = place.name.length;
         if (tamanhoNome <= 50) {
-            acertos.push({ titulo: '✅ Nome do Negócio Otimizado', desc: `O nome "${place.name}" possui um tamanho seguro (${tamanhoNome} caracteres). Não apresenta risco de punição por spam.` });
+            acertos.push({ titulo: '✅ Nome do Negócio Otimizado', desc: `O nome possui um tamanho seguro. Não apresenta risco de punição por spam.` });
         } else {
             score -= 10;
-            erros.push({ titulo: '🚨 Risco de Punição no Nome', desc: `O nome cadastrado é muito longo (${tamanhoNome} caracteres). O Google pode suspender seu perfil se entender que é Keyword Stuffing.` });
+            erros.push({ titulo: '🚨 Risco de Punição no Nome', desc: `O nome cadastrado é muito longo (${tamanhoNome} caracteres). O Google pode suspender seu perfil.` });
         }
 
-        // 8. Volume Geral de Fotos
+        // 9. Fotos (Volume e Clientes)
         if (place.photos && place.photos.length >= 3) {
-            acertos.push({ titulo: `📸 Presença Visual Forte (+${place.photos.length} fotos detectadas)`, desc: 'A empresa possui um bom banco de imagens público, tornando o perfil atrativo para clientes.' });
-        } else if (place.photos && place.photos.length > 0) {
-            score -= 5;
-            erros.push({ titulo: `⚠️ Poucas Fotos Detectadas (${place.photos.length})`, desc: 'O volume de mídia está abaixo do recomendado. Perfis com poucas fotos perdem engajamento.' });
-        } else {
-            score -= 10;
-            erros.push({ titulo: '🚨 Nenhuma Foto Detectada', desc: 'Perfis sem imagens recebem 42% menos solicitações de rotas. O cliente não confia no que não vê.' });
-        }
-
-        // 9. Mídias Publicadas por Clientes (UGC)
-        if (place.photos && place.photos.length > 0) {
+            acertos.push({ titulo: `📸 Presença Visual Forte (+${place.photos.length} fotos detectadas)`, desc: 'A empresa possui um bom banco de imagens público.' });
+            
             let fotosDeClientes = 0;
             place.photos.forEach(photo => {
                 let creditos = photo.html_attributions && photo.html_attributions.length > 0 ? photo.html_attributions[0] : "";
@@ -447,17 +413,24 @@
             });
 
             if (fotosDeClientes >= 3) {
-                acertos.push({ titulo: `📸 Mídia de Clientes: Excelente (${fotosDeClientes} em destaque)`, desc: 'O perfil possui fotos publicadas por clientes. Isso estabelece alta confiança e prova social.' });
+                acertos.push({ titulo: `📸 Mídia de Clientes: Excelente (${fotosDeClientes} em destaque)`, desc: 'O perfil possui fotos publicadas por clientes. Alta prova social.' });
             } else if (fotosDeClientes > 0) {
                 score -= 5;
-                erros.push({ titulo: `⚠️ Mídia de Clientes: Razoável (${fotosDeClientes} em destaque)`, desc: `Não existe mídia de clientes suficiente. Quantidade atual: ${fotosDeClientes}. Recomendada: 3.` });
+                erros.push({ titulo: `⚠️ Mídia de Clientes: Razoável (${fotosDeClientes} em destaque)`, desc: `Não existe mídia de clientes suficiente. Recomendada: 3.` });
             } else {
                 score -= 10;
-                erros.push({ titulo: `🚨 Mídia de Clientes: Fraca (0 em destaque)`, desc: `O Google não detectou fotos de clientes entre as imagens principais. Isso reduz a credibilidade.` });
+                erros.push({ titulo: `🚨 Mídia de Clientes: Fraca (0 em destaque)`, desc: `O Google não detectou fotos de clientes entre as imagens principais.` });
             }
+
+        } else if (place.photos && place.photos.length > 0) {
+            score -= 5;
+            erros.push({ titulo: `⚠️ Poucas Fotos Detectadas (${place.photos.length})`, desc: 'O volume de mídia está abaixo do recomendado.' });
+        } else {
+            score -= 10;
+            erros.push({ titulo: '🚨 Nenhuma Foto Detectada', desc: 'Perfis sem imagens recebem 42% menos solicitações de rotas.' });
         }
 
-        // 10. PENALIDADE FIXA E PROPOSITAL: Risco de Engajamento
+        // 10. PENALIDADE FIXA: Risco de Engajamento
         score -= 20;
         let nomeBuscado = encodeURIComponent(place.name);
         let mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + nomeBuscado + '&query_place_id=' + place.place_id;
@@ -466,11 +439,10 @@
             titulo: '<span id="titulo-engajamento">⚠️ Risco de Engajamento e Respostas (Penalidade)</span>', 
             desc: '<span id="desc-engajamento">O sistema reteve 20 pontos porque não foi possível confirmar se você responde aos clientes.</span><br><div id="botoes-engajamento" style="display:flex; gap:10px; margin-top:12px; flex-wrap: wrap;"><button onclick="window.open(\'' + mapUrl + '\', \'_blank\')" style="padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#ff6b00; color:white; border:none; border-radius:5px; cursor:pointer;">🔍 Inspecionar ao Vivo</button> <button onclick="validarEngajamento(this)" style="padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#10b981; color:white; border:none; border-radius:5px; cursor:pointer;">✅ Validar (Restaurar 20 pts)</button></div>' 
         });
-        
+
         // Trava de Segurança
         if (score < 0) score = 0;
         
-        // Salva a nota final na variável global para o botão poder manipulá-la depois
         pontuacaoAtual = score;
 
         // Atualizar Ecrã
@@ -481,36 +453,22 @@
         document.getElementById('report-area').style.display = 'block';
     }
 
-    // NOVA FUNÇÃO: O "Poder do Especialista" ao vivo
     function validarEngajamento(btnElement) {
-        // 1. Aumenta a nota em 20 pontos
         pontuacaoAtual += 20;
         if(pontuacaoAtual > 100) pontuacaoAtual = 100;
         
-        // 2. Anima o velocímetro novamente com a nova nota
         animarVelocimetro(pontuacaoAtual);
 
-        // 3. Muda os textos e esconde os botões
         document.getElementById('titulo-engajamento').innerHTML = '✅ Engajamento Validado pelo Auditor';
         document.getElementById('desc-engajamento').innerHTML = 'O especialista confirmou visualmente que a empresa responde ativamente aos clientes. 20 pontos restaurados!';
         document.getElementById('botoes-engajamento').style.display = 'none';
 
-        // 4. Pinta o card amarelo de verde (Acesso ao card "pai")
         let card = btnElement.closest('.card');
         if(card) {
             card.classList.remove('warning');
             card.classList.remove('danger');
             card.classList.add('success');
         }
-    }
-        if (score < 0) score = 0;
-
-        // Atualizar Ecrã
-        renderizarCards('resultados-auto', acertos, 'success');
-        renderizarCards('resultados-oportunidades', erros, erros.map(e => e.titulo.includes('🚨') ? 'danger' : 'warning'));
-
-        animarVelocimetro(score);
-        document.getElementById('report-area').style.display = 'block';
     }
 
     function renderizarCards(containerId, itens, typeClass) {

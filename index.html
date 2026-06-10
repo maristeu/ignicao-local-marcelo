@@ -328,6 +328,66 @@
             erros.push({ titulo: '🚨 Sem Banco de Imagens', desc: 'Perfis sem fotos recebem 42% menos solicitações de rotas.' });
         }
 
+        // 5.5 Comparativo de Avaliações (Tendência Recente)
+        if (place.reviews && place.reviews.length > 0 && place.rating) {
+            let somaRecentes = 0;
+            place.reviews.forEach(review => {
+                somaRecentes += review.rating;
+            });
+            
+            // Calcula a média apenas das avaliações recentes trazidas pela API
+            let mediaRecentes = (somaRecentes / place.reviews.length).toFixed(1);
+            let notaGeral = place.rating.toFixed(1);
+
+            if (mediaRecentes > notaGeral) {
+                acertos.push({
+                    titulo: `📈 Tendência de Avaliações: Aumentando`,
+                    desc: `Excelente! A média dos últimos clientes (${mediaRecentes}) está superior ao seu histórico geral (${notaGeral}).`
+                });
+            } else if (mediaRecentes === notaGeral) {
+                acertos.push({
+                    titulo: `⚖️ Tendência de Avaliações: Estável`,
+                    desc: `A média das avaliações recentes (${mediaRecentes}) acompanha o seu histórico geral (${notaGeral}).`
+                });
+            } else {
+                erros.push({
+                    titulo: `📉 Tendência de Avaliações: Caindo`,
+                    desc: `Alerta! Os clientes recentes deram notas (média ${mediaRecentes}) piores que o seu histórico geral (${notaGeral}). O atendimento pode ter sofrido quedas recentes.`
+                });
+            }
+        }
+        // 5.6 Recência da Última Avaliação (Fator de Frescor do Google)
+        if (place.reviews && place.reviews.length > 0) {
+            // Ordena as avaliações para garantir que a primeira é a mais recente
+            let avaliacoesOrdenadas = [...place.reviews].sort((a, b) => b.time - a.time);
+            let dataUltimaAvaliacao = avaliacoesOrdenadas[0].time; 
+            
+            // Calcula a diferença de dias entre hoje e a última avaliação
+            let hoje = Math.floor(Date.now() / 1000);
+            let diasAtras = Math.floor((hoje - dataUltimaAvaliacao) / 86400);
+
+            if (diasAtras <= 30) {
+                // Menos de um mês - Zona Verde
+                acertos.push({
+                    titulo: `⏱️ Recência: Perfil Quente (${diasAtras} dias atrás)`,
+                    desc: `Excelente! Sua última avaliação é recente. O Google adora perfis que recebem feedback constante e prioriza isso no ranqueamento.`
+                });
+            } else if (diasAtras <= 90) {
+                // Entre 1 e 3 meses - Zona Amarela (Perde 5 pontos)
+                score -= 5;
+                erros.push({
+                    titulo: `⚠️ Avaliações Desatualizadas (${diasAtras} dias atrás)`,
+                    desc: `Faz mais de um mês que você não recebe avaliações. O algoritmo do Google começa a diminuir o seu alcance local após 30 dias sem novidades.`
+                });
+            } else {
+                // Mais de 3 meses - Zona Vermelha (Perde 10 pontos)
+                score -= 10;
+                erros.push({
+                    titulo: `🚨 Abandono de Avaliações (${diasAtras} dias atrás)`,
+                    desc: `O seu perfil está esfriando! Concorrentes com avaliações frescas estão passando na sua frente. Mais de 90 dias sem avaliações afasta novos clientes.`
+                });
+            }
+        }
         
         // 6. PENALIDADE PROPOSITAL: Risco de Engajamento (-20 pontos do total ideal de 100)
         // Este card vai forçar a barra de erros a aparecer sempre, mesmo que o cliente tenha tudo perfeito acima.

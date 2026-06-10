@@ -363,6 +363,40 @@
             }
         }
 
+
+        // 6.5 Qualidade das Avaliações (Comentários Escritos)
+        if (place.reviews && place.reviews.length > 0) {
+            let comTexto = 0;
+            
+            // O robô varre as avaliações e verifica se existe um texto com pelo menos algumas palavras
+            place.reviews.forEach(review => {
+                if (review.text && review.text.trim().length > 10) {
+                    comTexto++;
+                }
+            });
+            
+            let percentual = Math.round((comTexto / place.reviews.length) * 100);
+
+            if (percentual >= 60) {
+                acertos.push({ 
+                    titulo: `💬 Qualidade de Avaliações: Alta (${percentual}% com texto)`, 
+                    desc: `A maioria dos seus clientes recentes deixou comentários escritos. Isso é excelente, pois injeta palavras-chave orgânicas no algoritmo do Google.` 
+                });
+            } else if (percentual > 0) {
+                score -= 5;
+                erros.push({ 
+                    titulo: `⚠️ Avaliações sem Comentário (${100 - percentual}% vazias)`, 
+                    desc: `Muitos clientes deixam apenas a nota em estrelas, sem escrever nada. Incentive descrições, pois o Google usa o texto do cliente para ranquear o seu serviço.` 
+                });
+            } else {
+                score -= 10;
+                erros.push({ 
+                    titulo: `🚨 Avaliações Vazias (0% com texto)`, 
+                    desc: `Nenhum dos seus últimos clientes escreveu um comentário. Notas altas sem texto possuem um impacto muito fraco no ranqueamento local.` 
+                });
+            }
+        }
+        
         // 7. Nome do Negócio (Anti-Spam)
         let tamanhoNome = place.name.length;
         if (tamanhoNome <= 50) {

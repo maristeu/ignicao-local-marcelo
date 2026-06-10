@@ -420,10 +420,13 @@
         }
     // 8. PENALIDADE FIXA E PROPOSITAL: Risco de Engajamento (-20 pontos)
         score -= 20;
-        let mapUrl = `https://www.google.com/maps/search/?api=1&query=empresa&query_place_id=${place.place_id}`;
+        
+        // Link oficial do Google Maps usando o Place ID da empresa
+        let mapUrl = 'https://www.google.com/maps/search/?api=1&query=empresa&query_place_id=' + place.place_id;
+        
         erros.push({ 
             titulo: '⚠️ Risco de Engajamento e Respostas (Penalidade Automática)', 
-            desc: 'O sistema reteve 20 pontos porque não foi possível confirmar se você responde aos clientes. O Google pune perfis abandonados.<br><button onclick="window.open(\'' + mapUrl + '\', \'_blank\')" style="margin-top:12px; padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#ff6b00; color:white; border:none; border-radius:5px; cursor:pointer;">🔍 Inspecionar Respostas ao Vivo</button>' 
+            desc: 'O sistema reteve 20 pontos porque não foi possível confirmar se responde aos clientes. O Google pune perfis abandonados.<br><button onclick="window.open(\'' + mapUrl + '\', \'_blank\')" style="margin-top:12px; padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#ff6b00; color:white; border:none; border-radius:5px; cursor:pointer;">🔍 Inspecionar Respostas ao Vivo</button>' 
         });
 
         // Trava de Segurança: A nota nunca pode ser menor que Zero

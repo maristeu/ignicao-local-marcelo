@@ -414,8 +414,9 @@
             erros.push({ titulo: '🚨 Risco de Punição no Nome', desc: `O nome cadastrado é muito longo (${tamanhoNome} caracteres). O Google pode suspender seu perfil.` });
         }
 
-        // 9. Fotos (Mídia do Proprietário e UGC)
+        // 9. Fotos (Total, Proprietário e UGC)
         if (place.photos && place.photos.length > 0) {
+            let totalFotos = place.photos.length;
             let fotosDeClientes = 0;
             let fotosDoProprietario = 0;
 
@@ -423,7 +424,6 @@
             place.photos.forEach(photo => {
                 let creditos = photo.html_attributions && photo.html_attributions.length > 0 ? photo.html_attributions[0] : "";
                 
-                // Se o crédito NÃO tem o nome da empresa, é de cliente. Caso contrário, é do dono.
                 if (creditos && !creditos.includes(place.name)) {
                     fotosDeClientes++;
                 } else {
@@ -431,40 +431,67 @@
                 }
             });
 
-            // 9.1 Análise de Mídia do Proprietário
+            // 9.1 Quantidade Total de Mídia (Vitrine)
+            if (totalFotos >= 3) {
+                acertos.push({ 
+                    titulo: `📸 Volume Total de Mídia (${totalFotos} em destaque)`, 
+                    desc: `Para oferecer a melhor experiência, o Google exige um volume mínimo de imagens. Quantidade atual na vitrine: ${totalFotos}. Quantidade mínima recomendada: 3.` 
+                });
+            } else {
+                score -= 5;
+                erros.push({ 
+                    titulo: `⚠️ Volume Total de Mídia Razoável (${totalFotos} em destaque)`, 
+                    desc: `Você não atingiu o limite mínimo de imagens fortes para preencher os destaques. Quantidade atual na vitrine: ${totalFotos}. Quantidade mínima recomendada: 3.` 
+                });
+            }
+
+            // 9.2 Análise de Mídia do Proprietário
             if (fotosDoProprietario >= 3) {
                 acertos.push({ 
                     titulo: `📸 Mídia do Proprietário (${fotosDoProprietario} na vitrine)`, 
-                    desc: `O negócio possui uma quantidade excelente de fotos oficiais em destaque. Mínimo recomendado: 3. Isso revela compromisso com a apresentação da marca.` 
+                    desc: `A empresa possui fotos oficiais suficientes em destaque. Isso revela compromisso com a apresentação profissional da marca.` 
                 });
             } else if (fotosDoProprietario > 0) {
                 score -= 5;
                 erros.push({ 
                     titulo: `⚠️ Mídia do Proprietário Razoável (${fotosDoProprietario} na vitrine)`, 
-                    desc: `Você tem poucas fotos oficiais com força para aparecer na vitrine principal. Quantidade atual na vitrine: ${fotosDoProprietario}. Mínimo recomendado: 3.` 
+                    desc: `Faltam fotos oficiais fortes na vitrine principal. Quantidade atual: ${fotosDoProprietario}. Mínimo recomendado: 3.` 
                 });
             } else {
                 score -= 10;
                 erros.push({ 
                     titulo: `🚨 Faltam Fotos Oficiais na Vitrine`, 
-                    desc: `O Google não puxou nenhuma foto oficial sua para os destaques principais, apenas de clientes ou terceiros. Isso enfraquece o controle visual da sua marca.` 
+                    desc: `O Google não puxou nenhuma foto oficial sua para os destaques principais, apenas de terceiros. Isso enfraquece o controle da sua marca.` 
                 });
             }
 
-            // 9.2 Análise de Mídia de Clientes (UGC)
+            // 9.3 Análise de Mídia de Clientes (UGC)
             if (fotosDeClientes >= 3) {
-                acertos.push({ titulo: `📸 UGC: Mídia de Clientes Excelente (${fotosDeClientes} em destaque)`, desc: 'O algoritmo do Google puxou fotos de clientes para a sua vitrine principal. Alta prova social!' });
+                acertos.push({ 
+                    titulo: `📸 UGC: Mídia de Clientes (${fotosDeClientes} em destaque)`, 
+                    desc: `O algoritmo do Google puxou fotos de clientes para a sua vitrine. Alta prova social!` 
+                });
             } else if (fotosDeClientes > 0) {
                 score -= 5;
-                erros.push({ titulo: `⚠️ UGC: Mídia de Clientes Razoável (${fotosDeClientes} em destaque)`, desc: `Atualmente, só ${fotosDeClientes} foto(s) de cliente tem força na sua vitrine principal. Recomendado: 3.` });
+                erros.push({ 
+                    titulo: `⚠️ UGC: Mídia de Clientes Razoável (${fotosDeClientes} em destaque)`, 
+                    desc: `Ainda não existe mídia publicada por clientes em quantidade suficiente na vitrine. Quantidade atual: ${fotosDeClientes}. Recomendada: 3.` 
+                });
             } else {
                 score -= 10;
-                erros.push({ titulo: `🚨 UGC: Mídia de Clientes Fraca (0 em destaque)`, desc: `Mesmo que existam fotos nas avaliações, o Google não considerou nenhuma delas relevante o suficiente para a vitrine principal.` });
+                erros.push({ 
+                    titulo: `🚨 UGC: Mídia de Clientes Fraca (0 em destaque)`, 
+                    desc: `O Google não considerou nenhuma foto de cliente relevante o suficiente para a vitrine principal, diminuindo a prova social.` 
+                });
             }
 
         } else {
-            score -= 15;
-            erros.push({ titulo: '🚨 Nenhuma Foto na Vitrine', desc: 'Perfis sem imagens em destaque recebem 42% menos solicitações de rotas.' });
+            // Se o perfil for totalmente cego de imagens
+            score -= 20;
+            erros.push({ 
+                titulo: '🚨 Nenhuma Foto na Vitrine', 
+                desc: 'Perfis sem imagens recebem 42% menos solicitações de rotas. O algoritmo oculta negócios que não possuem referências visuais.' 
+            });
         }
         
         // 10. PENALIDADE FIXA: Risco de Engajamento

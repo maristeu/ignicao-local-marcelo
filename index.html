@@ -322,12 +322,26 @@
             erros.push({ titulo: '🚨 Sem Avaliações', desc: 'A empresa não possui reputação online validada.' });
         }
 
-        // 5. Volume de Avaliações (-10)
-        if (place.user_ratings_total && place.user_ratings_total > 30) {
-            acertos.push({ titulo: `📈 Volume Saudável (${place.user_ratings_total})`, desc: 'Mostra que o negócio é frequentado e testado por muitos.' });
+        // 5. Volume de Avaliações (Métrica de Mínimo Recomendado)
+        let totalAvaliacoes = place.user_ratings_total || 0;
+        
+        if (totalAvaliacoes >= 30) {
+            acertos.push({ 
+                titulo: `📈 Volume de Avaliações Saudável (${totalAvaliacoes})`, 
+                desc: `O negócio possui uma quantidade excelente de avaliações. Quantidade atual: ${totalAvaliacoes}. Muito acima da quantidade mínima recomendada (3) para gerar autoridade local.` 
+            });
+        } else if (totalAvaliacoes >= 3) {
+            score -= 5;
+            erros.push({ 
+                titulo: `⚠️ Volume de Avaliações Razoável (${totalAvaliacoes})`, 
+                desc: `O negócio atingiu o requisito básico do Google, mas precisa crescer para dominar as buscas. Quantidade atual: ${totalAvaliacoes}. Quantidade mínima recomendada: 3.` 
+            });
         } else {
             score -= 10;
-            erros.push({ titulo: `⚠️ Baixo Volume de Avaliações (${place.user_ratings_total || 0})`, desc: 'É necessário criar campanhas urgentes para captar avaliações de clientes.' });
+            erros.push({ 
+                titulo: `🚨 Volume de Avaliações Insuficiente (${totalAvaliacoes})`, 
+                desc: `Ainda não existe quantidade de avaliações suficiente para estabelecer confiança. Quantidade atual: ${totalAvaliacoes}. Quantidade mínima recomendada: 3.` 
+            });
         }
 
         // 6. Inteligência de Avaliações (Tendência, Recência, Qualidade)

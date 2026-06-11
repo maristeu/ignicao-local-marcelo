@@ -402,7 +402,7 @@
 
         // 9. Fotos (Volume e Clientes)
         if (place.photos && place.photos.length >= 3) {
-            acertos.push({ titulo: `📸 Presença Visual Forte (+${place.photos.length} fotos detectadas)`, desc: 'A empresa possui um bom banco de imagens público.' });
+            acertos.push({ titulo: `📸 Presença Visual Forte (+${place.photos.length} fotos na vitrine)`, desc: 'A empresa possui um bom banco de imagens destacado no Google.' });
             
             let fotosDeClientes = 0;
             place.photos.forEach(photo => {
@@ -413,21 +413,21 @@
             });
 
             if (fotosDeClientes >= 3) {
-                acertos.push({ titulo: `📸 Mídia de Clientes: Excelente (${fotosDeClientes} em destaque)`, desc: 'O perfil possui fotos publicadas por clientes. Alta prova social.' });
+                acertos.push({ titulo: `📸 UGC: Mídia de Clientes Excelente (${fotosDeClientes} em destaque)`, desc: 'O algoritmo do Google puxou fotos de clientes para a sua vitrine principal. Alta prova social!' });
             } else if (fotosDeClientes > 0) {
                 score -= 5;
-                erros.push({ titulo: `⚠️ Mídia de Clientes: Razoável (${fotosDeClientes} em destaque)`, desc: `Não existe mídia de clientes suficiente. Recomendada: 3.` });
+                erros.push({ titulo: `⚠️ UGC: Mídia de Clientes Razoável (${fotosDeClientes} em destaque)`, desc: `O robô do Google lê apenas as 10 fotos mais relevantes do perfil. Atualmente, só ${fotosDeClientes} foto(s) de cliente tem força para aparecer na sua vitrine principal. Recomendado: 3.` });
             } else {
                 score -= 10;
-                erros.push({ titulo: `🚨 Mídia de Clientes: Fraca (0 em destaque)`, desc: `O Google não detectou fotos de clientes entre as imagens principais.` });
+                erros.push({ titulo: `🚨 UGC: Mídia de Clientes Fraca (0 em destaque)`, desc: `Mesmo que existam fotos nas avaliações, o Google não considerou nenhuma delas relevante o suficiente para a vitrine principal do seu negócio.` });
             }
 
         } else if (place.photos && place.photos.length > 0) {
             score -= 5;
-            erros.push({ titulo: `⚠️ Poucas Fotos Detectadas (${place.photos.length})`, desc: 'O volume de mídia está abaixo do recomendado.' });
+            erros.push({ titulo: `⚠️ Poucas Fotos Detectadas (${place.photos.length})`, desc: 'O volume de mídia principal está muito abaixo do recomendado.' });
         } else {
             score -= 10;
-            erros.push({ titulo: '🚨 Nenhuma Foto Detectada', desc: 'Perfis sem imagens recebem 42% menos solicitações de rotas.' });
+            erros.push({ titulo: '🚨 Nenhuma Foto na Vitrine', desc: 'Perfis sem imagens em destaque recebem 42% menos cliques de rotas.' });
         }
 
         // 10. PENALIDADE FIXA: Risco de Engajamento

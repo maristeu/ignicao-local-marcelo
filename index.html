@@ -204,7 +204,6 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="manual-item">🔴 <b>Horários Especiais e Feriados</b></div>
                 <div class="manual-item">🔴 <b>Data de Fundação</b></div>
-                <div class="manual-item">🔴 <b>Foto de Capa e Logotipo</b></div>
                 <div class="manual-item">🔴 <b>Presença de Vídeos Oficiais</b></div>
                 <div class="manual-item">🔴 <b>SEO na Descrição da Empresa</b></div>
                 <div class="manual-item">🔴 <b>Atualização de Posts (Updates)</b></div>
@@ -323,26 +322,16 @@
             erros.push({ titulo: '🚨 Sem Avaliações', desc: 'A empresa não possui reputação online validada.' });
         }
 
-        // 5. Volume de Avaliações (Métrica de Mínimo Recomendado)
+        // 5. Volume de Avaliações
         let totalAvaliacoes = place.user_ratings_total || 0;
-        
         if (totalAvaliacoes >= 30) {
-            acertos.push({ 
-                titulo: `📈 Volume de Avaliações Saudável (${totalAvaliacoes})`, 
-                desc: `O negócio possui uma quantidade excelente de avaliações. Quantidade atual: ${totalAvaliacoes}. Muito acima da quantidade mínima recomendada (3) para gerar autoridade local.` 
-            });
+            acertos.push({ titulo: `📈 Volume de Avaliações Saudável (${totalAvaliacoes})`, desc: `O negócio possui uma quantidade excelente de avaliações. Muito acima da quantidade mínima recomendada (3) para gerar autoridade local.` });
         } else if (totalAvaliacoes >= 3) {
             score -= 5;
-            erros.push({ 
-                titulo: `⚠️ Volume de Avaliações Razoável (${totalAvaliacoes})`, 
-                desc: `O negócio atingiu o requisito básico do Google, mas precisa crescer para dominar as buscas. Quantidade atual: ${totalAvaliacoes}. Quantidade mínima recomendada: 3.` 
-            });
+            erros.push({ titulo: `⚠️ Volume de Avaliações Razoável (${totalAvaliacoes})`, desc: `O negócio atingiu o requisito básico do Google, mas precisa crescer para dominar as buscas. Quantidade mínima recomendada: 3.` });
         } else {
             score -= 10;
-            erros.push({ 
-                titulo: `🚨 Volume de Avaliações Insuficiente (${totalAvaliacoes})`, 
-                desc: `Ainda não existe quantidade de avaliações suficiente para estabelecer confiança. Quantidade atual: ${totalAvaliacoes}. Quantidade mínima recomendada: 3.` 
-            });
+            erros.push({ titulo: `🚨 Volume de Avaliações Insuficiente (${totalAvaliacoes})`, desc: `Ainda não existe quantidade de avaliações suficiente para estabelecer confiança. Quantidade mínima recomendada: 3.` });
         }
 
         // 6. Inteligência de Avaliações (Tendência, Recência, Qualidade)
@@ -421,10 +410,8 @@
             let fotosDeClientes = 0;
             let fotosDoProprietario = 0;
 
-            // O robô varre a vitrine e separa quem tirou a foto
             place.photos.forEach(photo => {
                 let creditos = photo.html_attributions && photo.html_attributions.length > 0 ? photo.html_attributions[0] : "";
-                
                 if (creditos && !creditos.includes(place.name)) {
                     fotosDeClientes++;
                 } else {
@@ -432,69 +419,37 @@
                 }
             });
 
-            // 9.1 Quantidade Total de Mídia (Vitrine)
             if (totalFotos >= 3) {
-                acertos.push({ 
-                    titulo: `📸 Volume Total de Mídia (${totalFotos} em destaque)`, 
-                    desc: `Para oferecer a melhor experiência, o Google exige um volume mínimo de imagens. Quantidade atual na vitrine: ${totalFotos}. Quantidade mínima recomendada: 3.` 
-                });
+                acertos.push({ titulo: `📸 Volume Total de Mídia (${totalFotos} em destaque)`, desc: `O perfil possui um bom volume mínimo de imagens destacadas na vitrine principal.` });
             } else {
                 score -= 5;
-                erros.push({ 
-                    titulo: `⚠️ Volume Total de Mídia Razoável (${totalFotos} em destaque)`, 
-                    desc: `Você não atingiu o limite mínimo de imagens fortes para preencher os destaques. Quantidade atual na vitrine: ${totalFotos}. Quantidade mínima recomendada: 3.` 
-                });
+                erros.push({ titulo: `⚠️ Volume Total de Mídia Razoável (${totalFotos} em destaque)`, desc: `Você não atingiu o limite de imagens fortes para preencher os destaques da vitrine. Mínimo recomendado: 3.` });
             }
 
-            // 9.2 Análise de Mídia do Proprietário
             if (fotosDoProprietario >= 3) {
-                acertos.push({ 
-                    titulo: `📸 Mídia do Proprietário (${fotosDoProprietario} na vitrine)`, 
-                    desc: `A empresa possui fotos oficiais suficientes em destaque. Isso revela compromisso com a apresentação profissional da marca.` 
-                });
+                acertos.push({ titulo: `📸 Mídia do Proprietário (${fotosDoProprietario} na vitrine)`, desc: `A empresa possui fotos oficiais suficientes em destaque, revelando compromisso profissional.` });
             } else if (fotosDoProprietario > 0) {
                 score -= 5;
-                erros.push({ 
-                    titulo: `⚠️ Mídia do Proprietário Razoável (${fotosDoProprietario} na vitrine)`, 
-                    desc: `Faltam fotos oficiais fortes na vitrine principal. Quantidade atual: ${fotosDoProprietario}. Mínimo recomendado: 3.` 
-                });
+                erros.push({ titulo: `⚠️ Mídia do Proprietário Razoável (${fotosDoProprietario} na vitrine)`, desc: `Faltam fotos oficiais fortes na vitrine principal. Quantidade atual: ${fotosDoProprietario}. Mínimo recomendado: 3.` });
             } else {
                 score -= 10;
-                erros.push({ 
-                    titulo: `🚨 Faltam Fotos Oficiais na Vitrine`, 
-                    desc: `O Google não puxou nenhuma foto oficial sua para os destaques principais, apenas de terceiros. Isso enfraquece o controle da sua marca.` 
-                });
+                erros.push({ titulo: `🚨 Faltam Fotos Oficiais na Vitrine`, desc: `O Google não puxou nenhuma foto oficial sua para os destaques principais, apenas de terceiros.` });
             }
 
-            // 9.3 Análise de Mídia de Clientes (UGC)
             if (fotosDeClientes >= 3) {
-                acertos.push({ 
-                    titulo: `📸 UGC: Mídia de Clientes (${fotosDeClientes} em destaque)`, 
-                    desc: `O algoritmo do Google puxou fotos de clientes para a sua vitrine. Alta prova social!` 
-                });
+                acertos.push({ titulo: `📸 UGC: Mídia de Clientes (${fotosDeClientes} em destaque)`, desc: `O algoritmo do Google puxou fotos de clientes para a sua vitrine. Alta prova social!` });
             } else if (fotosDeClientes > 0) {
                 score -= 5;
-                erros.push({ 
-                    titulo: `⚠️ UGC: Mídia de Clientes Razoável (${fotosDeClientes} em destaque)`, 
-                    desc: `Ainda não existe mídia publicada por clientes em quantidade suficiente na vitrine. Quantidade atual: ${fotosDeClientes}. Recomendada: 3.` 
-                });
+                erros.push({ titulo: `⚠️ UGC: Mídia de Clientes Razoável (${fotosDeClientes} em destaque)`, desc: `Ainda não existe mídia publicada por clientes em quantidade suficiente na vitrine. Recomendada: 3.` });
             } else {
                 score -= 10;
-                erros.push({ 
-                    titulo: `🚨 UGC: Mídia de Clientes Fraca (0 em destaque)`, 
-                    desc: `O Google não considerou nenhuma foto de cliente relevante o suficiente para a vitrine principal, diminuindo a prova social.` 
-                });
+                erros.push({ titulo: `🚨 UGC: Mídia de Clientes Fraca (0 em destaque)`, desc: `O Google não considerou nenhuma foto de cliente relevante o suficiente para a vitrine principal.` });
             }
-
         } else {
-            // Se o perfil for totalmente cego de imagens
             score -= 20;
-            erros.push({ 
-                titulo: '🚨 Nenhuma Foto na Vitrine', 
-                desc: 'Perfis sem imagens recebem 42% menos solicitações de rotas. O algoritmo oculta negócios que não possuem referências visuais.' 
-            });
+            erros.push({ titulo: '🚨 Nenhuma Foto na Vitrine', desc: 'Perfis sem imagens recebem 42% menos solicitações de rotas.' });
         }
-        
+
         // 10. PENALIDADE FIXA: Risco de Engajamento
         score -= 20;
         let nomeBuscado = encodeURIComponent(place.name);
@@ -503,6 +458,13 @@
         erros.push({ 
             titulo: '<span id="titulo-engajamento">⚠️ Risco de Engajamento e Respostas (Penalidade)</span>', 
             desc: '<span id="desc-engajamento">O sistema reteve 20 pontos porque não foi possível confirmar se você responde aos clientes.</span><br><div id="botoes-engajamento" style="display:flex; gap:10px; margin-top:12px; flex-wrap: wrap;"><button onclick="window.open(\'' + mapUrl + '\', \'_blank\')" style="padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#ff6b00; color:white; border:none; border-radius:5px; cursor:pointer;">🔍 Inspecionar ao Vivo</button> <button onclick="validarEngajamento(this)" style="padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#10b981; color:white; border:none; border-radius:5px; cursor:pointer;">✅ Validar (Restaurar 20 pts)</button></div>' 
+        });
+
+        // 11. NOVA PENALIDADE INTERATIVA: Identidade Visual (Capa e Logotipo)
+        score -= 10;
+        erros.push({ 
+            titulo: '<span id="titulo-visual">⚠️ Identidade Visual: Capa e Logotipo (Não Verificado)</span>', 
+            desc: '<span id="desc-visual">O robô não consegue avaliar de fora a presença ou a qualidade estética da foto de capa e logotipo profissional.</span><br><div id="botoes-visual" style="display:flex; gap:10px; margin-top:12px; flex-wrap: wrap;"><button onclick="window.open(\'' + mapUrl + '\', \'_blank\')" style="padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#ff6b00; color:white; border:none; border-radius:5px; cursor:pointer;">🔍 Inspecionar ao Vivo</button> <button onclick="validarIdentidadeVisual(this)" style="padding: 10px 15px; font-size:14px; font-weight:bold; background-color:#10b981; color:white; border:none; border-radius:5px; cursor:pointer;">✅ Validar Design (+10 pts)</button></div>' 
         });
 
         // Trava de Segurança
@@ -521,19 +483,23 @@
     function validarEngajamento(btnElement) {
         pontuacaoAtual += 20;
         if(pontuacaoAtual > 100) pontuacaoAtual = 100;
-        
         animarVelocimetro(pontuacaoAtual);
-
         document.getElementById('titulo-engajamento').innerHTML = '✅ Engajamento Validado pelo Auditor';
         document.getElementById('desc-engajamento').innerHTML = 'O especialista confirmou visualmente que a empresa responde ativamente aos clientes. 20 pontos restaurados!';
         document.getElementById('botoes-engajamento').style.display = 'none';
-
         let card = btnElement.closest('.card');
-        if(card) {
-            card.classList.remove('warning');
-            card.classList.remove('danger');
-            card.classList.add('success');
-        }
+        if(card) { card.classList.remove('warning', 'danger'); card.classList.add('success'); }
+    }
+
+    function validarIdentidadeVisual(btnElement) {
+        pontuacaoAtual += 10;
+        if(pontuacaoAtual > 100) pontuacaoAtual = 100;
+        animarVelocimetro(pontuacaoAtual);
+        document.getElementById('titulo-visual').innerHTML = '✅ Identidade Visual Validada pelo Auditor';
+        document.getElementById('desc-visual').innerHTML = 'O especialista confirmou visualmente que a empresa possui Foto de Capa estratégica e Logotipo configurados. 10 pontos restaurados!';
+        document.getElementById('botoes-visual').style.display = 'none';
+        let card = btnElement.closest('.card');
+        if(card) { card.classList.remove('warning', 'danger'); card.classList.add('success'); }
     }
 
     function renderizarCards(containerId, itens, typeClass) {

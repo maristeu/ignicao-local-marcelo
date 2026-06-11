@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GBP Check — Análise de Saúde do Google Meu Negócio</title>
+<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpeQX3m6lPjDYAorZ6VnQqYvlu_r17idU&libraries=places&v=weekly"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#34A853;--yellow:#FBBC04;--red:#EA4335;--blue:#4285F4;
+  --green-bg:#E8F5E9;--yellow-bg:#FFF8E1;--red-bg:#FDECEA;--blue-bg:#E8F0FE;
+  --dark:#1a1a2e;--dark2:#16213e;--text:#1a202c;--muted:#718096;
+  --border:#e2e8f0;--surface:#f7fafc;--white:#ffffff;
+}
+body{font-family:'Inter',sans-serif;background:#eef1f5;color:var(--text);min-height:100vh}
+
+/* TOPBAR */
+.topbar{background:var(--dark);padding:.85rem 2rem;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:1.2rem;font-weight:700;color:#fff;letter-spacing:-.02em}
+.logo span{color:var(--blue)}
+.logo-tagline{font-size:.7rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+.google-badge{display:flex;align-items:center;gap:6px;font-size:.75rem;color:rgba(255,255,255,.4)}
+.g-dots span{width:8px;height:8px;border-radius:50%;display:inline-block;margin:0 1px}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--dark) 0%,#0f2042 100%);padding:2.5rem 1.5rem 3rem;text-align:center;border-bottom:3px solid rgba(66,133,244,.3)}
+.hero h1{font-size:clamp(1.5rem,4vw,2.2rem);font-weight:700;color:#fff;margin-bottom:.5rem;line-height:1.2}
+.hero h1 span{color:var(--blue)}
+.hero p{color:rgba(255,255,255,.55);margin-bottom:2rem;font-size:.95rem;max-width:500px;margin-left:auto;margin-right:auto}
+.search-card{max-width:580px;margin:0 auto;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:.6rem}
+.search-inner{display:flex;gap:.5rem}
+.search-card input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:1rem;padding:.6rem .75rem;font-family:'Inter',sans-serif;min-width:0}
+.search-card input::placeholder{color:rgba(255,255,255,.3)}
+.btn-analisar{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:.7rem 1.4rem;font-size:.9rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:'Inter',sans-serif}
+.btn-analisar:hover{background:#3574e2}
+.btn-analisar:disabled{opacity:.45;cursor:not-allowed}
+.search-hint{font-size:.75rem;color:rgba(255,255,255,.3);margin-top:.6rem;text-align:center}
+
+/* LOADING */
+#loading{display:none;text-align:center;padding:3rem 1rem}
+.spinner{width:38px;height:38px;border:3px solid rgba(66,133,244,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-steps{display:flex;flex-direction:column;gap:.4rem;max-width:280px;margin:.75rem auto 0}
+.loading-step{font-size:.82rem;color:rgba(255,255,255,.4);padding:.3rem .75rem;border-radius:6px;background:rgba(255,255,255,.04)}
+.loading-step.done{color:var(--green);background:rgba(52,168,83,.08)}
+.loading-step.active{color:#fff;background:rgba(66,133,244,.12);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* RELATÓRIO */
+#report{display:none;max-width:820px;margin:0 auto;padding:1.5rem 1rem 5rem}
+
+/* EMPRESA CARD */
+.empresa-card{background:var(--white);border-radius:14px;padding:1.5rem;margin-bottom:1.25rem;border:1px solid var(--border);display:flex;align-items:flex-start;gap:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.empresa-icon{width:56px;height:56px;border-radius:10px;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;border:1px solid rgba(66,133,244,.2)}
+.empresa-info h2{font-size:1.15rem;font-weight:700;color:var(--dark);margin-bottom:.2rem}
+.empresa-info .addr{font-size:.82rem;color:var(--muted);margin-bottom:.5rem}
+.tags{display:flex;flex-wrap:wrap;gap:.35rem}
+.tag{font-size:.72rem;font-weight:500;padding:.22rem .7rem;border-radius:100px;display:inline-flex;align-items:center;gap:.3rem}
+.tag-blue{background:var(--blue-bg);color:#185EA5}
+.tag-green{background:var(--green-bg);color:#1B5E20}
+.tag-red{background:var(--red-bg);color:#7F0000}
+.tag-yellow{background:var(--yellow-bg);color:#7B4F00}
+
+/* GAUGE CARD */
+.gauge-card{background:var(--white);border-radius:14px;padding:1.75rem 1.5rem;margin-bottom:1.25rem;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.gauge-card-title{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:center;margin-bottom:1.5rem}
+.gauge-layout{display:flex;align-items:center;justify-content:center;gap:2.5rem;flex-wrap:wrap}
+.gauge-svg-wrap{position:relative;width:200px;height:118px;flex-shrink:0}
+.gauge-overlay{position:absolute;bottom:0;left:50%;transform:translateX(-50%);text-align:center;width:120px}
+.gauge-num{font-size:2.8rem;font-weight:700;line-height:1;transition:color .5s}
+.gauge-pts{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.gauge-tier{display:inline-block;margin-top:.6rem;padding:.3rem 1rem;border-radius:100px;font-size:.78rem;font-weight:600}
+.gauge-legend{display:flex;flex-direction:column;gap:.85rem}
+.leg-row{display:flex;align-items:center;gap:.75rem}
+.leg-circle{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;flex-shrink:0}
+.leg-circle.fraco{background:var(--red-bg);color:var(--red)}
+.leg-circle.razoavel{background:var(--yellow-bg);color:#B8860B}
+.leg-circle.bom{background:var(--green-bg);color:var(--green)}
+.leg-info-num{font-size:1.1rem;font-weight:700;line-height:1}
+.leg-info-txt{font-size:.78rem;color:var(--muted)}
+
+/* SEÇÕES */
+.sec-label{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:1.5rem 0 .6rem .1rem;display:flex;align-items:center;gap:.5rem}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ITEM CARD */
+.item-card{background:var(--white);border-radius:12px;padding:1.15rem 1.25rem;margin-bottom:.65rem;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.03);transition:box-shadow .2s}
+.item-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.07)}
+.item-top{display:flex;align-items:center;gap:.65rem;margin-bottom:.5rem}
+.status-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.status-dot.bom{background:var(--green)}
+.status-dot.razoavel{background:var(--yellow)}
+.status-dot.fraco{background:var(--red)}
+.status-dot.manual{background:#9b59b6}
+.item-title{font-size:.92rem;font-weight:600;color:var(--text);flex:1;line-height:1.3}
+.item-badge{font-size:.68rem;font-weight:600;padding:.18rem .6rem;border-radius:100px;white-space:nowrap}
+.item-badge.bom{background:var(--green-bg);color:#1B5E20}
+.item-badge.razoavel{background:var(--yellow-bg);color:#7B4F00}
+.item-badge.fraco{background:var(--red-bg);color:#7F0000}
+.item-badge.manual{background:#f3e8ff;color:#6b21a8}
+.item-desc{font-size:.81rem;color:var(--muted);line-height:1.65;margin-bottom:.6rem}
+.item-detalhe{font-size:.8rem;color:var(--text);font-style:italic;margin-bottom:.75rem;padding:.5rem .75rem;background:var(--surface);border-radius:6px;border-left:3px solid var(--border)}
+.item-detalhe.bom{border-left-color:var(--green);background:var(--green-bg)}
+.item-detalhe.razoavel{border-left-color:var(--yellow);background:var(--yellow-bg)}
+.item-detalhe.fraco{border-left-color:var(--red);background:var(--red-bg)}
+
+/* PROGRESS BAR */
+.progress-wrap{margin-top:.25rem}
+.progress-track{height:11px;border-radius:100px;background:linear-gradient(to right,#FFCDD2 0%,#FFCDD2 33%,#FFE082 33%,#FFE082 66%,#A5D6A7 66%,#A5D6A7 100%);position:relative;overflow:visible}
+.progress-arrow{position:absolute;top:-16px;font-size:13px;line-height:1;transform:translateX(-50%);transition:left .9s cubic-bezier(.34,1.56,.64,1);pointer-events:none}
+.progress-labs{display:flex;justify-content:space-between;margin-top:.3rem}
+.progress-labs span{font-size:.68rem;color:var(--muted)}
+
+/* BOTÕES DE VALIDAÇÃO */
+.validate-wrap{display:flex;gap:.5rem;margin-top:.85rem;flex-wrap:wrap}
+.btn-inspecionar{padding:.5rem 1rem;font-size:.78rem;font-weight:600;background:#ff6b00;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:.35rem;transition:opacity .2s}
+.btn-inspecionar:hover{opacity:.88}
+.btn-validar{padding:.5rem 1rem;font-size:.78rem;font-weight:600;background:var(--green);color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:.35rem;transition:opacity .2s}
+.btn-validar:hover{opacity:.88}
+.validado-label{font-size:.8rem;color:var(--green);font-weight:500;display:flex;align-items:center;gap:.3rem}
+
+/* SEÇÃO MANUAL / GANCHO */
+.gancho-card{background:var(--dark);border-radius:14px;padding:1.75rem;margin-top:1.75rem}
+.gancho-card h3{font-size:1rem;font-weight:600;color:#fff;margin-bottom:.4rem;display:flex;align-items:center;gap:.5rem}
+.gancho-card>p{font-size:.83rem;color:rgba(255,255,255,.5);margin-bottom:1.25rem;line-height:1.7}
+.gancho-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.5rem}
+.gancho-item{background:rgba(234,67,53,.1);border:1px solid rgba(234,67,53,.2);border-radius:8px;padding:.7rem .9rem;font-size:.81rem;color:rgba(255,255,255,.8);display:flex;align-items:flex-start;gap:.5rem;line-height:1.5}
+.gancho-item::before{content:'●';color:var(--red);flex-shrink:0;font-size:.6rem;margin-top:.25rem}
+.btn-gancho{width:100%;background:var(--blue);color:#fff;border:none;border-radius:9px;padding:1rem;font-size:.95rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s}
+.btn-gancho:hover{opacity:.88}
+
+/* AÇÕES */
+.actions{display:flex;gap:.65rem;margin-top:1.5rem}
+.btn-act{flex:1;padding:.75rem;border-radius:9px;border:1px solid var(--border);background:var(--white);color:var(--text);font-size:.86rem;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:.4rem;transition:background .15s}
+.btn-act:hover{background:var(--surface)}
+.btn-act.dark{background:var(--dark);color:#fff;border-color:var(--dark)}
+.btn-act.dark:hover{opacity:.88}
+
+@media(max-width:560px){
+  .gancho-grid{grid-template-columns:1fr}
+  .gauge-layout{gap:1.25rem}
+  .empresa-card{flex-direction:column}
+  .actions{flex-direction:column}
+  .search-inner{flex-direction:column}
+  .btn-analisar{width:100%}
+}
+
+@media print{
+  .topbar,.hero,.actions,.btn-gancho,.validate-wrap,.btn-inspecionar,.btn-validar{display:none!important}
+  body{background:#fff}
+  #report{display:block!important;padding:0}
+  .item-card,.gauge-card,.empresa-card{box-shadow:none;border:1px solid #ddd}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="logo">GBP<span>Check</span></div>
+    <div class="logo-tagline">Diagnóstico · Google Meu Negócio</div>
+  </div>
+  <div class="google-badge">
+    <div class="g-dots">
+      <span style="background:#4285F4"></span>
+      <span style="background:#EA4335"></span>
+      <span style="background:#FBBC04"></span>
+      <span style="background:#34A853"></span>
+    </div>
+    Powered by Google Places API
+  </div>
+</div>
+
+<div class="hero">
+  <h1>Diagnóstico completo do<br><span>Google Meu Negócio</span></h1>
+  <p>Digite o nome e a cidade da empresa para gerar o relatório de saúde completo.</p>
+  <div class="search-card">
+    <div class="search-inner">
+      <input type="text" id="inp" placeholder="Ex: Rei das Capas Caraguatatuba" onkeydown="if(event.key==='Enter')iniciar()">
+      <button class="btn-analisar" id="btnAnalisar" onclick="iniciar()">Analisar perfil →</button>
+    </div>
+  </div>
+  <div class="search-hint">Inclua a cidade para resultados mais precisos</div>
+</div>
+
+<div id="loading" style="background:var(--dark);padding:2rem">
+  <div class="spinner"></div>
+  <p style="color:rgba(255,255,255,.5);font-size:.88rem">Varrendo o perfil no Google...</p>
+  <div class="loading-steps">
+    <div class="loading-step" id="ls1">🔍 Localizando empresa</div>
+    <div class="loading-step" id="ls2">📊 Buscando dados do perfil</div>
+    <div class="loading-step" id="ls3">⭐ Analisando avaliações</div>
+    <div class="loading-step" id="ls4">📸 Verificando mídias</div>
+    <div class="loading-step" id="ls5">📋 Gerando relatório</div>
+  </div>
+</div>
+
+<div id="report">
+  <div id="card-empresa" class="empresa-card"></div>
+
+  <!-- GAUGE -->
+  <div class="gauge-card">
+    <div class="gauge-card-title">Score de Saúde do Perfil</div>
+    <div class="gauge-layout">
+      <div>
+        <div class="gauge-svg-wrap">
+          <svg width="200" height="118" viewBox="0 0 200 118" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 108 A84 84 0 0 1 184 108" stroke="#f0f2f5" stroke-width="18" stroke-linecap="round"/>
+            <path d="M16 108 A84 84 0 0 1 184 108" stroke="#FFCDD2" stroke-width="18" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="176"/>
+            <path d="M16 108 A84 84 0 0 1 184 108" stroke="#FFE082" stroke-width="18" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="132"/>
+            <path d="M16 108 A84 84 0 0 1 184 108" stroke="#A5D6A7" stroke-width="18" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="79"/>
+            <path id="gaugeNeedle" d="M16 108 A84 84 0 0 1 184 108" stroke="#4285F4" stroke-width="6" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264"/>
+            <text x="10" y="122" font-size="10" fill="#EA4335" font-family="Inter,sans-serif">0</text>
+            <text x="93" y="18" font-size="10" fill="#FBBC04" font-family="Inter,sans-serif" text-anchor="middle">50</text>
+            <text x="188" y="122" font-size="10" fill="#34A853" font-family="Inter,sans-serif" text-anchor="end">100</text>
+          </svg>
+          <div class="gauge-overlay">
+            <div class="gauge-num" id="gaugeNum">—</div>
+            <div class="gauge-pts">pontos</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:.75rem">
+          <span class="gauge-tier" id="gaugeTier"></span>
+        </div>
+      </div>
+      <div class="gauge-legend">
+        <div class="leg-row">
+          <div class="leg-circle fraco" id="legFraco">0</div>
+          <div><div class="leg-info-num" style="color:var(--red)" id="cntFraco">0</div><div class="leg-info-txt">Fraco</div></div>
+        </div>
+        <div class="leg-row">
+          <div class="leg-circle razoavel" id="legRazoavel">0</div>
+          <div><div class="leg-info-num" style="color:#B8860B" id="cntRazoavel">0</div><div class="leg-info-txt">Razoável</div></div>
+        </div>
+        <div class="leg-row">
+          <div class="leg-circle bom" id="legBom">0</div>
+          <div><div class="leg-info-num" style="color:var(--green)" id="cntBom">0</div><div class="leg-info-txt">Bom</div></div>
+        </div>
+        <div class="leg-row">
+          <div class="leg-circle" style="background:#f3e8ff;color:#6b21a8" id="legManual">?</div>
+          <div><div class="leg-info-num" style="color:#6b21a8" id="cntManual">0</div><div class="leg-info-txt">A validar</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="secoes"></div>
+
+  <!-- GANCHO DE VENDAS -->
+  <div class="gancho-card">
+    <h3>🔒 Análise especializada pendente</h3>
+    <p>Os itens abaixo exigem uma varredura profunda que nossa equipe realiza internamente. Essas falhas costumam causar perda silenciosa de clientes para a concorrência:</p>
+    <div class="gancho-grid">
+      <div class="gancho-item">Respostas a avaliações — clientes observam se o dono se importa</div>
+      <div class="gancho-item">Posts recentes no GMB — Google prioriza perfis com publicações ativas</div>
+      <div class="gancho-item">Palavras-chave na descrição — o texto usa os termos que o cliente pesquisa?</div>
+      <div class="gancho-item">Catálogo de produtos e serviços — facilita compra por impulso no mapa</div>
+      <div class="gancho-item">Perguntas e respostas — clientes esperam resposta do proprietário</div>
+      <div class="gancho-item">Horário especial e feriados — evita visitas frustradas e perda de clientes</div>
+    </div>
+    <button class="btn-gancho">Solicitar auditoria completa — sem custo</button>
+  </div>
+
+  <div class="actions">
+    <button class="btn-act" onclick="resetar()">← Nova análise</button>
+    <button class="btn-act dark" onclick="window.print()">⬇ Salvar PDF</button>
+  </div>
+</div>
+
+<div id="map" style="display:none;width:1px;height:1px"></div>
+
+<script>
+var mapObj, svc, placeAtual, scoreAtual = 0;
+
+/* ──────────── ESTRUTURA DOS ITENS ──────────── */
+var ITENS = [
+  /* AVALIAÇÕES */
+  { sec:'Avaliações', id:'av-media', titulo:'Média de avaliações', peso:3,
+    desc:'Analisa se a pontuação média transmite segurança ao cliente. Uma nota alta é decisiva na escolha entre concorrentes.',
+    auto: function(p){
+      if(!p.rating) return {s:'fraco',pct:0,det:'Perfil sem avaliações registradas.'};
+      if(p.rating>=4.5) return {s:'bom',pct:92,det:'Nota '+p.rating.toFixed(1)+' — excelente reputação online.'};
+      if(p.rating>=4.0) return {s:'razoavel',pct:55,det:'Nota '+p.rating.toFixed(1)+' — razoável, mas perde para perfis acima de 4.5.'};
+      return {s:'fraco',pct:18,det:'Nota '+p.rating.toFixed(1)+' — nota baixa afasta clientes imediatamente.'};
+    }},
+  { sec:'Avaliações', id:'av-qtd', titulo:'Volume de avaliações', peso:2,
+    desc:'Analisa se o número de avaliações é suficiente para transmitir credibilidade e histórico de atendimento.',
+    auto: function(p){
+      var n=p.user_ratings_total||0;
+      if(n>=50) return {s:'bom',pct:100,det:n+' avaliações — volume saudável e confiável.'};
+      if(n>=10) return {s:'razoavel',pct:52,det:n+' avaliações — razoável, mas precisa crescer.'};
+      return {s:'fraco',pct:8,det:n+' avaliações — insuficiente para gerar confiança.'};
+    }},
+  { sec:'Avaliações', id:'av-qualidade', titulo:'Qualidade das avaliações (texto)', peso:2,
+    desc:'O Google usa o conteúdo dos comentários para entender seu negócio e ranquear para palavras-chave relevantes.',
+    auto: function(p){
+      if(!p.reviews||p.reviews.length===0) return {s:'fraco',pct:5,det:'Nenhuma avaliação com texto detectada via API.'};
+      var comTexto=p.reviews.filter(function(r){return r.text&&r.text.length>10}).length;
+      var pct=Math.round((comTexto/p.reviews.length)*100);
+      if(pct>=60) return {s:'bom',pct:88,det:pct+'% das avaliações recentes têm texto — ótima riqueza de palavras-chave.'};
+      if(pct>0) return {s:'razoavel',pct:45,det:pct+'% com texto — muitos clientes deixam só estrelas.'};
+      return {s:'fraco',pct:5,det:'0% das avaliações recentes têm texto escrito.'};
+    }},
+  { sec:'Avaliações', id:'av-recencia', titulo:'Recência das avaliações', peso:2,
+    desc:'O Google valoriza perfis com avaliações recentes. Perfis sem avaliações novas perdem relevância ao longo do tempo.',
+    auto: function(p){
+      if(!p.reviews||p.reviews.length===0) return {s:'fraco',pct:5,det:'Sem dados de avaliações recentes disponíveis.'};
+      var mais=p.reviews.reduce(function(a,r){return r.time>a?r.time:a},0);
+      var dias=Math.floor((Date.now()/1000-mais)/86400);
+      if(dias<=30) return {s:'bom',pct:95,det:'Última avaliação há '+dias+' dias — perfil ativo e relevante.'};
+      if(dias<=90) return {s:'razoavel',pct:48,det:'Última avaliação há '+dias+' dias — frequência abaixo do ideal.'};
+      return {s:'fraco',pct:10,det:'Última avaliação há '+dias+' dias — perfil estagnado.'};
+    }},
+
+  /* INFORMAÇÕES DO PERFIL */
+  { sec:'Informações do perfil', id:'pf-telefone', titulo:'Número de telefone', peso:3,
+    desc:'Uma das informações mais críticas. Sem telefone, o cliente não consegue contato direto e busca o concorrente.',
+    auto: function(p){
+      if(p.formatted_phone_number) return {s:'bom',pct:100,det:'Número registrado: '+p.formatted_phone_number};
+      return {s:'fraco',pct:0,det:'Telefone não cadastrado — perda direta de contatos.'};
+    }},
+  { sec:'Informações do perfil', id:'pf-horario', titulo:'Horário de funcionamento', peso:3,
+    desc:'Clientes verificam o horário antes de visitar. Perfil sem horário gera desconfiança e visitas frustradas.',
+    auto: function(p){
+      if(p.opening_hours&&p.opening_hours.weekday_text&&p.opening_hours.weekday_text.length>0)
+        return {s:'bom',pct:100,det:'Horários definidos: '+p.opening_hours.weekday_text[0]+' e mais.'};
+      return {s:'fraco',pct:0,det:'Horário de funcionamento não informado no perfil.'};
+    }},
+  { sec:'Informações do perfil', id:'pf-website', titulo:'Website vinculado', peso:2,
+    desc:'Ter um site vinculado aumenta a autoridade do perfil e o número de visitas ao site.',
+    auto: function(p){
+      if(p.website) return {s:'bom',pct:100,det:'Site vinculado: '+p.website.replace(/^https?:\/\//,'').split('/')[0]};
+      return {s:'razoavel',pct:25,det:'Nenhum site vinculado — recomendamos ao menos uma landing page.'};
+    }},
+  { sec:'Informações do perfil', id:'pf-nome', titulo:'Nome do negócio (anti-spam)', peso:2,
+    desc:'Nomes muito longos ou com palavras-chave forçadas podem levar à suspensão do perfil pelo Google.',
+    auto: function(p){
+      var n=p.name?p.name.length:0;
+      if(n<=50) return {s:'bom',pct:100,det:'Nome com '+n+' caracteres — dentro do limite seguro (máx. 50).'};
+      if(n<=80) return {s:'razoavel',pct:45,det:'Nome com '+n+' caracteres — atenção ao risco de penalização.'};
+      return {s:'fraco',pct:0,det:'Nome com '+n+' caracteres — risco real de suspensão pelo Google.'};
+    }},
+  { sec:'Informações do perfil', id:'pf-descricao', titulo:'Descrição / resumo editorial', peso:2,
+    desc:'A descrição é oportunidade de usar palavras-chave e contar a história do negócio ao Google e ao cliente.',
+    auto: function(p){
+      if(p.editorial_summary&&p.editorial_summary.overview&&p.editorial_summary.overview.length>20)
+        return {s:'bom',pct:100,det:'Resumo detectado: "'+p.editorial_summary.overview.substring(0,60)+'..."'};
+      return {s:'razoavel',pct:35,det:'Descrição não detectada via API — verifique e otimize manualmente no GMB.'};
+    }},
+  { sec:'Informações do perfil', id:'pf-categorias', titulo:'Categorias secundárias', peso:2,
+    desc:'Adicionar categorias secundárias aumenta o alcance orgânico em buscas relacionadas ao negócio.',
+    auto: function(p){
+      var cats=(p.types||[]).filter(function(t){return t!=='point_of_interest'&&t!=='establishment'});
+      if(cats.length>2) return {s:'bom',pct:100,det:cats.length+' categorias detectadas — ótima cobertura orgânica.'};
+      if(cats.length===2) return {s:'razoavel',pct:55,det:'2 categorias — razoável, mas há espaço para expandir.'};
+      return {s:'fraco',pct:10,det:'Apenas 1 categoria detectada — oportunidade de expansão perdida.'};
+    }},
+
+  /* FOTOS E MÍDIAS */
+  { sec:'Fotos e mídias', id:'md-total', titulo:'Volume total de mídias na vitrine', peso:2,
+    desc:'Perfis com fotos recebem 42% mais solicitações de rota e 35% mais cliques para o site.',
+    auto: function(p){
+      var n=p.photos?p.photos.length:0;
+      if(n>=10) return {s:'bom',pct:100,det:n+' fotos na vitrine — banco de imagens saudável.'};
+      if(n>=3) return {s:'razoavel',pct:50,det:n+' fotos — abaixo do recomendado (mínimo 10).'};
+      return {s:'fraco',pct:5,det:(n===0?'Nenhuma foto':'Apenas '+n+' foto(s)')+' — perfil pouco atrativo.'};
+    }},
+  { sec:'Fotos e mídias', id:'md-prop', titulo:'Fotos pelo proprietário', peso:2,
+    desc:'Fotos do proprietário revelam comprometimento e mostram como o negócio quer ser apresentado.',
+    auto: function(p){
+      if(!p.photos||p.photos.length===0) return {s:'fraco',pct:0,det:'Sem fotos detectadas no perfil.'};
+      var prop=p.photos.filter(function(ph){
+        var c=ph.html_attributions&&ph.html_attributions.length>0?ph.html_attributions[0]:'';
+        return !c||c.includes(p.name);
+      }).length;
+      if(prop>=5) return {s:'bom',pct:100,det:prop+' fotos oficiais — presença visual forte do proprietário.'};
+      if(prop>=2) return {s:'razoavel',pct:50,det:prop+' fotos oficiais — abaixo do mínimo recomendado (5).'};
+      return {s:'fraco',pct:5,det:prop===0?'Nenhuma foto oficial do proprietário detectada.':'Apenas '+prop+' foto(s) oficial(is).'};
+    }},
+  { sec:'Fotos e mídias', id:'md-clientes', titulo:'Fotos de clientes (UGC)', peso:1,
+    desc:'Fotos de clientes são alta prova social — o algoritmo do Google as prioriza como conteúdo autêntico.',
+    auto: function(p){
+      if(!p.photos||p.photos.length===0) return {s:'fraco',pct:0,det:'Sem fotos de clientes detectadas.'};
+      var cli=p.photos.filter(function(ph){
+        var c=ph.html_attributions&&ph.html_attributions.length>0?ph.html_attributions[0]:'';
+        return c&&!c.includes(p.name);
+      }).length;
+      if(cli>=3) return {s:'bom',pct:100,det:cli+' fotos de clientes na vitrine — excelente prova social!'};
+      if(cli>=1) return {s:'razoavel',pct:45,det:cli+' foto(s) de clientes — incentive mais envios.'};
+      return {s:'fraco',pct:0,det:'Nenhuma foto de cliente na vitrine principal.'};
+    }},
+
+  /* VALIDAÇÃO MANUAL COM BOTÕES */
+  { sec:'Engajamento e identidade', id:'vl-engajamento', titulo:'Resposta às avaliações', peso:2,
+    desc:'Responder avaliações mostra que o dono se importa com clientes. Isso impacta diretamente na retenção e no algoritmo de ranking.',
+    manual: true, pontos: 0, validado: false },
+  { sec:'Engajamento e identidade', id:'vl-visual', titulo:'Identidade visual (capa e logotipo)', peso:2,
+    desc:'Foto de capa estratégica e logotipo profissional transmitem credibilidade e tornam o perfil memorável.',
+    manual: true, pontos: 0, validado: false },
+  { sec:'Engajamento e identidade', id:'vl-posts', titulo:'Posts e publicações recentes no GMB', peso:2,
+    desc:'O Google prioriza perfis com postagens ativas. Posts recentes aumentam visibilidade orgânica no mapa.',
+    manual: true, pontos: 0, validado: false },
+  { sec:'Engajamento e identidade', id:'vl-servicos', titulo:'Catálogo de serviços/produtos', peso:2,
+    desc:'Serviços e produtos cadastrados no GMB facilitam a compra por impulso direto no Google Maps.',
+    manual: true, pontos: 0, validado: false }
+];
+
+/* ──────────── CONTROLE DE SCORE ──────────── */
+var scoreBase = 0;
+var scoreBonus = 0;
+var mapUrl = '';
+
+function recalcular(){
+  var s = Math.min(100, Math.max(0, scoreBase + scoreBonus));
+  scoreAtual = s;
+  animarGauge(s);
+}
+
+/* ──────────── INICIAR BUSCA ──────────── */
+function iniciar(){
+  var val = document.getElementById('inp').value.trim();
+  if(!val){ alert('Digite o nome da empresa.'); return; }
+  document.getElementById('btnAnalisar').disabled = true;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('report').style.display = 'none';
+  scoreBase = 0; scoreBonus = 0;
+  ITENS.forEach(function(it){ if(it.manual){ it.pontos=0; it.validado=false; } });
+
+  animLoadingSteps();
+
+  mapObj = new google.maps.Map(document.getElementById('map'),{center:{lat:-23.55,lng:-46.63},zoom:12});
+  svc = new google.maps.places.PlacesService(mapObj);
+  svc.textSearch({query:val,fields:['place_id','name']},function(res,st){
+    if(st===google.maps.places.PlacesServiceStatus.OK&&res.length>0){
+      buscarDetalhes(res[0].place_id);
+    } else {
+      document.getElementById('loading').style.display='none';
+      document.getElementById('btnAnalisar').disabled=false;
+      alert('Empresa não encontrada. Tente incluir a cidade: "Nome da Empresa Cidade".');
+    }
+  });
+}
+
+function animLoadingSteps(){
+  var steps=['ls1','ls2','ls3','ls4','ls5'];
+  steps.forEach(function(id,i){
+    setTimeout(function(){ document.getElementById(id).classList.add('active'); }, i*500);
+    setTimeout(function(){ document.getElementById(id).classList.remove('active'); document.getElementById(id).classList.add('done'); }, i*500+1200);
+  });
+}
+
+function buscarDetalhes(pid){
+  svc.getDetails({
+    placeId: pid,
+    fields: ['place_id','name','formatted_phone_number','formatted_address','website','rating',
+             'user_ratings_total','opening_hours','photos','reviews','types',
+             'editorial_summary','business_status']
+  }, function(place, st){
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('btnAnalisar').disabled = false;
+    if(st === google.maps.places.PlacesServiceStatus.OK){
+      placeAtual = place;
+      mapUrl = 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(place.name)+'&query_place_id='+place.place_id;
+      renderRelatorio(place);
+    } else {
+      alert('Erro ao buscar detalhes. Tente novamente.');
+    }
+  });
+}
+
+/* ──────────── RENDER COMPLETO ──────────── */
+function renderRelatorio(place){
+  // Card empresa
+  var tipo = (place.types||[]).filter(function(t){return t!=='point_of_interest'&&t!=='establishment';});
+  var tipoLabel = tipo.length>0 ? tipo[0].replace(/_/g,' ') : 'negócio local';
+  var statusOk = place.business_status==='OPERATIONAL';
+  document.getElementById('card-empresa').innerHTML =
+    '<div class="empresa-icon">🏢</div>'+
+    '<div class="empresa-info">'+
+      '<h2>'+place.name+'</h2>'+
+      '<div class="addr">'+(place.formatted_address||'')+'</div>'+
+      '<div class="tags">'+
+        '<span class="tag '+(statusOk?'tag-green':'tag-red')+'">'+(statusOk?'✓ Ativo':'⚠ '+place.business_status)+'</span>'+
+        (place.formatted_phone_number?'<span class="tag tag-blue">📞 '+place.formatted_phone_number+'</span>':'')+
+        (place.rating?'<span class="tag '+(place.rating>=4.5?'tag-green':place.rating>=4.0?'tag-yellow':'tag-red')+'">⭐ '+place.rating.toFixed(1)+' ('+place.user_ratings_total+' avaliações)</span>':'')+
+        '<span class="tag tag-blue" style="text-transform:capitalize">'+tipoLabel+'</span>'+
+      '</div>'+
+    '</div>';
+
+  // Agrupar por seção
+  var secs = {};
+  ITENS.forEach(function(it){
+    if(!secs[it.sec]) secs[it.sec] = [];
+    secs[it.sec].push(it);
+  });
+
+  var totalPeso=0, pontos=0, cntF=0, cntR=0, cntB=0, cntM=0;
+  var html = '';
+
+  Object.keys(secs).forEach(function(secNome){
+    html += '<div class="sec-label">'+secNome+'</div>';
+    secs[secNome].forEach(function(it){
+      if(it.manual){
+        // Item de validação manual
+        cntM++;
+        html += renderManual(it, place);
+      } else {
+        var r = it.auto(place);
+        if(r.s==='bom'){ pontos+=it.peso*2; cntB++; }
+        else if(r.s==='razoavel'){ pontos+=it.peso*1; cntR++; }
+        else { cntF++; }
+        totalPeso+=it.peso*2;
+        html += renderAuto(it, r);
+      }
+    });
+  });
+
+  scoreBase = totalPeso>0 ? Math.round((pontos/totalPeso)*80) : 0; // 80% do score vem do automático
+  recalcular();
+
+  document.getElementById('cntFraco').textContent = cntF;
+  document.getElementById('cntRazoavel').textContent = cntR;
+  document.getElementById('cntBom').textContent = cntB;
+  document.getElementById('cntManual').textContent = cntM;
+  document.getElementById('legFraco').textContent = cntF;
+  document.getElementById('legRazoavel').textContent = cntR;
+  document.getElementById('legBom').textContent = cntB;
+  document.getElementById('legManual').textContent = cntM;
+
+  document.getElementById('secoes').innerHTML = html;
+  document.getElementById('report').style.display = 'block';
+  window.scrollTo({top:document.getElementById('report').offsetTop-20,behavior:'smooth'});
+}
+
+function renderAuto(it, r){
+  var badgeTxt = r.s==='bom'?'Bom':r.s==='razoavel'?'Razoável':'Fraco';
+  return '<div class="item-card">'+
+    '<div class="item-top">'+
+      '<span class="status-dot '+r.s+'"></span>'+
+      '<span class="item-title">'+it.titulo+'</span>'+
+      '<span class="item-badge '+r.s+'">'+badgeTxt+'</span>'+
+    '</div>'+
+    '<div class="item-desc">'+it.desc+'</div>'+
+    '<div class="item-detalhe '+r.s+'">'+r.det+'</div>'+
+    '<div class="progress-wrap">'+
+      '<div class="progress-track">'+
+        '<span class="progress-arrow" id="arr-'+it.id+'" style="left:'+r.pct+'%">▼</span>'+
+      '</div>'+
+      '<div class="progress-labs"><span>Fraco</span><span>Razoável</span><span>Bom</span></div>'+
+    '</div>'+
+  '</div>';
+}
+
+function renderManual(it, place){
+  return '<div class="item-card" id="card-'+it.id+'">'+
+    '<div class="item-top">'+
+      '<span class="status-dot manual"></span>'+
+      '<span class="item-title">'+it.titulo+'</span>'+
+      '<span class="item-badge manual" id="badge-'+it.id+'">A validar</span>'+
+    '</div>'+
+    '<div class="item-desc">'+it.desc+'</div>'+
+    '<div class="item-detalhe" id="det-'+it.id+'" style="border-left-color:#9b59b6;background:#f3e8ff">Inspecione o perfil ao vivo e valide este item para liberar os pontos correspondentes.</div>'+
+    '<div class="progress-wrap" id="prog-'+it.id+'">'+
+      '<div class="progress-track">'+
+        '<span class="progress-arrow" style="left:0%">▼</span>'+
+      '</div>'+
+      '<div class="progress-labs"><span>Fraco</span><span>Razoável</span><span>Bom</span></div>'+
+    '</div>'+
+    '<div class="validate-wrap" id="vw-'+it.id+'">'+
+      '<button class="btn-inspecionar" onclick="window.open(\''+mapUrl+'\',\'_blank\')">🔍 Abrir no Maps</button>'+
+      '<button class="btn-validar" onclick="validar(\''+it.id+'\')">✅ Validar (+'+it.peso*2+' pts)</button>'+
+    '</div>'+
+  '</div>';
+}
+
+function validar(id){
+  var it = ITENS.find(function(i){return i.id===id;});
+  if(!it||it.validado) return;
+  it.validado = true;
+  it.pontos = it.peso*2;
+  scoreBonus += Math.round((it.peso*2 / calcTotalPesoManual()) * 20);
+  if(scoreBonus>20) scoreBonus=20;
+  recalcular();
+
+  document.getElementById('badge-'+id).textContent = 'Bom';
+  document.getElementById('badge-'+id).className = 'item-badge bom';
+  document.querySelector('#card-'+id+' .status-dot').className = 'status-dot bom';
+  document.getElementById('det-'+id).textContent = '✓ Validado pelo auditor — item confirmado como positivo.';
+  document.getElementById('det-'+id).className = 'item-detalhe bom';
+  document.getElementById('prog-'+id).innerHTML =
+    '<div class="progress-track"><span class="progress-arrow" style="left:95%">▼</span></div>'+
+    '<div class="progress-labs"><span>Fraco</span><span>Razoável</span><span>Bom</span></div>';
+  document.getElementById('vw-'+id).innerHTML =
+    '<span class="validado-label">✓ Item validado pelo auditor</span>';
+
+  var cntBom = parseInt(document.getElementById('cntBom').textContent)||0;
+  var cntManual = parseInt(document.getElementById('cntManual').textContent)||0;
+  document.getElementById('cntBom').textContent = cntBom+1;
+  document.getElementById('legBom').textContent = cntBom+1;
+  document.getElementById('cntManual').textContent = Math.max(0,cntManual-1);
+  document.getElementById('legManual').textContent = Math.max(0,cntManual-1);
+}
+
+function calcTotalPesoManual(){
+  return ITENS.filter(function(i){return i.manual;}).reduce(function(a,i){return a+i.peso*2;},0);
+}
+
+/* ──────────── GAUGE ──────────── */
+function animarGauge(score){
+  var needle = document.getElementById('gaugeNeedle');
+  var numEl = document.getElementById('gaugeNum');
+  var tier = document.getElementById('gaugeTier');
+  var total = 264;
+  var target = total - Math.round((score/100)*total);
+  var current = parseInt(needle.getAttribute('stroke-dashoffset'))||total;
+  var step = Math.max(1, Math.abs(current-target)/40);
+  var iv = setInterval(function(){
+    if(current>target) current=Math.max(current-step,target);
+    else current=Math.min(current+step,target);
+    needle.setAttribute('stroke-dashoffset', Math.round(current));
+    var n = Math.round(((total-current)/total)*100);
+    numEl.textContent = n;
+    numEl.style.color = n>=80?'var(--green)':n>=50?'#B8860B':'var(--red)';
+    if(Math.abs(current-target)<2){ numEl.textContent=score; clearInterval(iv); }
+  },18);
+
+  if(score>=80){ tier.textContent='Perfil saudável'; tier.style.cssText='background:var(--green-bg);color:#1B5E20'; }
+  else if(score>=50){ tier.textContent='Necessita melhorias'; tier.style.cssText='background:var(--yellow-bg);color:#7B4F00'; }
+  else { tier.textContent='Perfil em risco'; tier.style.cssText='background:var(--red-bg);color:#7F0000'; }
+}
+
+function resetar(){
+  document.getElementById('inp').value='';
+  document.getElementById('report').style.display='none';
+  document.getElementById('inp').focus();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

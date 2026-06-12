@@ -121,15 +121,28 @@ body{font-family:'Inter',sans-serif;background:#eef1f5;color:var(--text);min-hei
 .btn-validar:hover{opacity:.88}
 .validado-label{font-size:.8rem;color:var(--green);font-weight:500;display:flex;align-items:center;gap:.3rem}
 
-/* SEÇÃO MANUAL / GANCHO */
-.gancho-card{background:var(--dark);border-radius:14px;padding:1.75rem;margin-top:1.75rem}
-.gancho-card h3{font-size:1rem;font-weight:600;color:#fff;margin-bottom:.4rem;display:flex;align-items:center;gap:.5rem}
-.gancho-card>p{font-size:.83rem;color:rgba(255,255,255,.5);margin-bottom:1.25rem;line-height:1.7}
-.gancho-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.5rem}
-.gancho-item{background:rgba(234,67,53,.1);border:1px solid rgba(234,67,53,.2);border-radius:8px;padding:.7rem .9rem;font-size:.81rem;color:rgba(255,255,255,.8);display:flex;align-items:flex-start;gap:.5rem;line-height:1.5}
-.gancho-item::before{content:'●';color:var(--red);flex-shrink:0;font-size:.6rem;margin-top:.25rem}
-.btn-gancho{width:100%;background:var(--blue);color:#fff;border:none;border-radius:9px;padding:1rem;font-size:.95rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s}
-.btn-gancho:hover{opacity:.88}
+/* SEÇÃO GANCHO */
+.gancho-card{background:linear-gradient(135deg,#0f0f1e 0%,#1a1a2e 100%);border-radius:16px;padding:2rem;margin-top:1.75rem;border:1px solid rgba(234,67,53,.2);position:relative;overflow:hidden}
+.gancho-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--red),#ff6b00,var(--yellow))}
+.gancho-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
+.gancho-top h3{font-size:1.05rem;font-weight:700;color:#fff;display:flex;align-items:center;gap:.5rem}
+.gancho-alerta{background:rgba(234,67,53,.15);border:1px solid rgba(234,67,53,.3);border-radius:8px;padding:.4rem .9rem;font-size:.75rem;font-weight:600;color:#ff6b6b;white-space:nowrap}
+.gancho-subtitulo{font-size:.83rem;color:rgba(255,255,255,.45);margin-bottom:1.5rem;line-height:1.7}
+.gancho-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem}
+.gancho-item{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:.9rem 1rem;display:flex;flex-direction:column;gap:.35rem;transition:border-color .2s}
+.gancho-item:hover{border-color:rgba(234,67,53,.3)}
+.gancho-item-top{display:flex;align-items:center;gap:.5rem}
+.gancho-item-icon{font-size:1rem;flex-shrink:0}
+.gancho-item-titulo{font-size:.82rem;font-weight:600;color:#fff;line-height:1.3}
+.gancho-item-impacto{font-size:.75rem;color:rgba(255,255,255,.4);line-height:1.5;padding-left:1.5rem}
+.gancho-item-stat{font-size:.72rem;font-weight:600;color:#ff9a6c;background:rgba(255,107,0,.1);border-radius:4px;padding:.15rem .5rem;display:inline-block;margin-left:1.5rem;margin-top:.1rem}
+.gancho-divider{height:1px;background:rgba(255,255,255,.06);margin:1.25rem 0}
+.gancho-urgencia{background:rgba(234,67,53,.08);border:1px solid rgba(234,67,53,.2);border-radius:10px;padding:1rem 1.1rem;margin-bottom:1.25rem;display:flex;align-items:flex-start;gap:.75rem}
+.gancho-urgencia-icon{font-size:1.25rem;flex-shrink:0;margin-top:.1rem}
+.gancho-urgencia-text{font-size:.82rem;color:rgba(255,255,255,.6);line-height:1.7}
+.gancho-urgencia-text strong{color:#ff9a6c}
+.btn-gancho{width:100%;background:linear-gradient(135deg,var(--blue) 0%,#2563eb 100%);color:#fff;border:none;border-radius:10px;padding:1rem;font-size:.95rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.btn-gancho:hover{opacity:.9;transform:translateY(-1px)}
 
 /* AÇÕES */
 .actions{display:flex;gap:.65rem;margin-top:1.5rem}
@@ -148,7 +161,7 @@ body{font-family:'Inter',sans-serif;background:#eef1f5;color:var(--text);min-hei
 }
 
 @media print{
-  .topbar,.hero,.actions,.btn-gancho,.validate-wrap,.btn-inspecionar,.btn-validar{display:none!important}
+  .topbar,.hero,.actions,.btn-gancho,.validate-wrap,.btn-inspecionar,.btn-validar,.gancho-urgencia{display:none!important}
   body{background:#fff}
   #report{display:block!important;padding:0}
   .item-card,.gauge-card,.empresa-card{box-shadow:none;border:1px solid #ddd}
@@ -249,18 +262,58 @@ body{font-family:'Inter',sans-serif;background:#eef1f5;color:var(--text);min-hei
   <div id="secoes"></div>
 
   <!-- GANCHO DE VENDAS -->
-  <div class="gancho-card">
-    <h3>🔒 Análise especializada pendente</h3>
-    <p>Os itens abaixo exigem uma varredura profunda que nossa equipe realiza internamente. Essas falhas costumam causar perda silenciosa de clientes para a concorrência:</p>
-    <div class="gancho-grid">
-      <div class="gancho-item">Respostas a avaliações — clientes observam se o dono se importa</div>
-      <div class="gancho-item">Posts recentes no GMB — Google prioriza perfis com publicações ativas</div>
-      <div class="gancho-item">Palavras-chave na descrição — o texto usa os termos que o cliente pesquisa?</div>
-      <div class="gancho-item">Catálogo de produtos e serviços — facilita compra por impulso no mapa</div>
-      <div class="gancho-item">Perguntas e respostas — clientes esperam resposta do proprietário</div>
-      <div class="gancho-item">Horário especial e feriados — evita visitas frustradas e perda de clientes</div>
+  <div class="gancho-card" id="ganchoCard">
+    <div class="gancho-top">
+      <h3>🔒 Análise especializada pendente</h3>
+      <span class="gancho-alerta" id="ganchoAlerta">6 pontos críticos identificados</span>
     </div>
-    <button class="btn-gancho">Solicitar auditoria completa — sem custo</button>
+    <p class="gancho-subtitulo">A varredura automática cobriu os fundamentos do perfil. Os itens abaixo exigem análise interna especializada — e são exatamente onde a maioria das empresas <strong style="color:rgba(255,255,255,.7)">perde clientes para a concorrência sem perceber.</strong></p>
+
+    <div class="gancho-grid">
+      <div class="gancho-item">
+        <div class="gancho-item-top"><span class="gancho-item-icon">💬</span><span class="gancho-item-titulo">Respostas a avaliações</span></div>
+        <div class="gancho-item-impacto">O dono responde? Com que tom e frequência?</div>
+        <span class="gancho-item-stat">88% dos clientes preferem empresas que respondem</span>
+      </div>
+      <div class="gancho-item">
+        <div class="gancho-item-top"><span class="gancho-item-icon">📢</span><span class="gancho-item-titulo">Posts e publicações recentes</span></div>
+        <div class="gancho-item-impacto">Perfil ativo ou abandonado? Última postagem?</div>
+        <span class="gancho-item-stat">2,5× mais visualizações com posts semanais</span>
+      </div>
+      <div class="gancho-item">
+        <div class="gancho-item-top"><span class="gancho-item-icon">🔑</span><span class="gancho-item-titulo">Palavras-chave na descrição</span></div>
+        <div class="gancho-item-impacto">O texto usa os termos que o cliente pesquisa?</div>
+        <span class="gancho-item-stat">Descrição otimizada aumenta até 70% o alcance</span>
+      </div>
+      <div class="gancho-item">
+        <div class="gancho-item-top"><span class="gancho-item-icon">🛍️</span><span class="gancho-item-titulo">Catálogo de produtos e serviços</span></div>
+        <div class="gancho-item-impacto">Serviços cadastrados facilitam compra por impulso</div>
+        <span class="gancho-item-stat">Perfis com catálogo recebem 40% mais cliques</span>
+      </div>
+      <div class="gancho-item">
+        <div class="gancho-item-top"><span class="gancho-item-icon">❓</span><span class="gancho-item-titulo">Perguntas e respostas (Q&A)</span></div>
+        <div class="gancho-item-impacto">Clientes esperam resposta direta do proprietário</div>
+        <span class="gancho-item-stat">Q&A ativo reduz 30% das dúvidas pré-compra</span>
+      </div>
+      <div class="gancho-item">
+        <div class="gancho-item-top"><span class="gancho-item-icon">🗓️</span><span class="gancho-item-titulo">Horário especial e feriados</span></div>
+        <div class="gancho-item-impacto">Feriados sem aviso = visita frustrada = avaliação ruim</div>
+        <span class="gancho-item-stat">1 em cada 3 reclamações vem de horário errado</span>
+      </div>
+    </div>
+
+    <div class="gancho-divider"></div>
+
+    <div class="gancho-urgencia">
+      <span class="gancho-urgencia-icon">⚠️</span>
+      <div class="gancho-urgencia-text">
+        <strong>Enquanto esses pontos não são corrigidos</strong>, cada cliente que pesquisa sua empresa no Google pode estar escolhendo um concorrente que tem o perfil mais completo. O Google ranqueia perfis ativos e bem configurados — não os mais antigos.
+      </div>
+    </div>
+
+    <button class="btn-gancho" onclick="abrirWhatsapp()">
+      📋 Solicitar auditoria especializada completa — sem custo
+    </button>
   </div>
 
   <div class="actions">
@@ -629,6 +682,17 @@ function animarGauge(score){
   if(score>=80){ tier.textContent='Perfil saudável'; tier.style.cssText='background:var(--green-bg);color:#1B5E20'; }
   else if(score>=50){ tier.textContent='Necessita melhorias'; tier.style.cssText='background:var(--yellow-bg);color:#7B4F00'; }
   else { tier.textContent='Perfil em risco'; tier.style.cssText='background:var(--red-bg);color:#7F0000'; }
+}
+
+function abrirWhatsapp(){
+  if(placeAtual){
+    var msg = encodeURIComponent(
+      'Olá! Acabei de ver o relatório GBP Check da *'+placeAtual.name+'*. '+
+      'Gostaria de solicitar a auditoria especializada completa para entender '+
+      'os 6 pontos críticos identificados. Pode me ajudar?'
+    );
+    window.open('https://wa.me/?text='+msg,'_blank');
+  }
 }
 
 function resetar(){

@@ -389,13 +389,7 @@ var ITENS_AUTO=[
      if(n<=80)return{s:'razoavel',pct:45,det:'Nome com '+n+' caracteres — atenção ao risco de penalização pelo Google.'};
      return{s:'fraco',pct:0,det:'Nome com '+n+' caracteres — risco real de suspensão pelo Google.'};
    }},
-  {sec:'Informações do perfil',id:'pf-descricao',titulo:'Descrição / resumo editorial',peso:2,
-   desc:'A descrição é a oportunidade de usar palavras-chave e contar a história do negócio ao Google e ao cliente.',
-   auto:function(p){
-     if(p.editorial_summary&&p.editorial_summary.overview&&p.editorial_summary.overview.length>20)
-       return{s:'bom',pct:100,det:'Resumo detectado: "'+p.editorial_summary.overview.substring(0,70)+'..."'};
-     return{s:'razoavel',pct:35,det:'Descrição não detectada automaticamente — verifique e otimize no painel GMB.'};
-   }},
+  
   {sec:'Informações do perfil',id:'pf-categorias',titulo:'Categorias do negócio',peso:2,
    desc:'Categorias corretas e secundárias aumentam o alcance orgânico em buscas relacionadas ao negócio.',
    auto:function(p){
@@ -462,6 +456,12 @@ var ITENS_MANUAL=[
    dica:'<strong>Como verificar (celular):</strong> Abra o Google Maps → toque na empresa → Avaliações → veja se há resposta do proprietário. <strong>Computador:</strong> painel do Google Business Profile → Avaliações.',
    detOk:'O proprietário responde às avaliações — demonstra comprometimento e aumenta a confiança do cliente.',
    detNok:'Avaliações sem resposta do proprietário — clientes percebem descaso, impacta na retenção.'},
+
+  {sec:'Informações do perfil',id:'mn-descricao',titulo:'Descrição da empresa',peso:2,
+   desc:'A descrição é a oportunidade de usar palavras-chave e contar a história do negócio ao Google e ao cliente.',
+   dica:'<strong>Como verificar:</strong> Abra o perfil no Maps → role até "Sobre". <strong>Bom:</strong> descrição presente com mais de 50 caracteres e palavras que descrevem o negócio. <strong>Razoável:</strong> descrição muito curta ou genérica. <strong>Fraco:</strong> sem descrição.',
+   detOk:'Descrição presente e com conteúdo relevante — aumenta o alcance orgânico e ajuda o Google a entender o negócio.',
+   detNok:'Sem descrição ou descrição muito curta — oportunidade de palavras-chave perdida, menor visibilidade orgânica.'},
 
   {sec:'Engajamento e identidade',id:'mn-posts',titulo:'Posts e publicações recentes',peso:2,
    desc:'O Google considera "postagem recente" qualquer publicação feita nos últimos 7 dias. Posts semanais aumentam 2,5× as visualizações.',

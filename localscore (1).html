@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocalScore — Diagnóstico de Visibilidade no Google</title>
+<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBpeQX3m6lPjDYAorZ6VnQqYvlu_r17idU&libraries=places&v=weekly"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#34A853;--yellow:#FBBC04;--red:#EA4335;--blue:#4285F4;--orange:#ff6b00;
+  --green-bg:#E8F5E9;--yellow-bg:#FFF8E1;--red-bg:#FDECEA;--blue-bg:#E8F0FE;
+  --dark:#0d1117;--dark2:#161b22;--accent:#58a6ff;
+  --bg:#F0F2F5;--card:#FFFFFF;--card2:#F8F9FA;
+  --text:#1F2937;--text2:#6B7280;--text3:#374151;
+  --border:#E5E7EB;--border2:#D1D5DB;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── TOPBAR dark ── */
+.topbar{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.08);padding:.9rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:.6rem}
+.brand-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#7c3aed);display:flex;align-items:center;justify-content:center;font-size:1rem}
+.brand-name{font-size:1.1rem;font-weight:800;color:#fff;letter-spacing:-.03em}
+.brand-name span{color:var(--accent)}
+.brand-tag{font-size:.65rem;color:rgba(255,255,255,.4);letter-spacing:.12em;text-transform:uppercase;margin-top:1px}
+.g-pills{display:flex;gap:4px;align-items:center}
+.g-pill{width:10px;height:10px;border-radius:50%}
+
+/* ── HERO dark ── */
+.hero{background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(88,166,255,.12) 0%,transparent 70%),var(--dark);padding:3.5rem 1.5rem 4.5rem;text-align:center;border-bottom:1px solid rgba(255,255,255,.06);position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.2);border-radius:100px;padding:.35rem 1rem;font-size:.75rem;font-weight:500;color:var(--accent);margin-bottom:1.5rem;letter-spacing:.04em}
+.hero h1{font-size:clamp(1.8rem,5vw,2.8rem);font-weight:800;color:#fff;line-height:1.15;margin-bottom:1rem;letter-spacing:-.03em}
+.hero h1 .hl{background:linear-gradient(135deg,var(--accent),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{color:rgba(255,255,255,.55);font-size:.95rem;max-width:460px;margin:0 auto 2.5rem;line-height:1.7}
+.search-wrap{max-width:560px;margin:0 auto;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:.5rem;display:flex;gap:.5rem;box-shadow:0 0 0 1px rgba(88,166,255,.1),0 20px 40px rgba(0,0,0,.4)}
+.search-wrap input{flex:1;background:transparent;border:none;outline:none;color:#fff;font-size:.95rem;padding:.6rem .75rem;font-family:'Inter',sans-serif;min-width:0}
+.search-wrap input::placeholder{color:rgba(255,255,255,.3)}
+.btn-scan{background:linear-gradient(135deg,var(--accent) 0%,#7c3aed 100%);color:#fff;border:none;border-radius:10px;padding:.7rem 1.4rem;font-size:.88rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif;transition:all .2s;display:flex;align-items:center;gap:.4rem}
+.btn-scan:hover{opacity:.88;transform:translateY(-1px)}
+.btn-scan:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.search-hint{font-size:.75rem;color:rgba(255,255,255,.3);margin-top:.75rem}
+.hero-stats{display:flex;justify-content:center;gap:2rem;margin-top:2.5rem;flex-wrap:wrap}
+.hero-stat-num{font-size:1.4rem;font-weight:700;color:#fff;text-align:center}
+.hero-stat-txt{font-size:.72rem;color:rgba(255,255,255,.4);margin-top:2px;text-align:center}
+
+/* ── LOADING dark ── */
+#loading{display:none;padding:3rem 1.5rem;text-align:center;background:var(--dark)}
+.scan-ring-wrap{width:56px;height:56px;margin:0 auto 1.25rem;position:relative}
+.scan-ring{width:56px;height:56px;border-radius:50%;border:2px solid rgba(88,166,255,.15);position:absolute}
+.scan-ring-spin{width:56px;height:56px;border-radius:50%;border:2px solid transparent;border-top-color:var(--accent);position:absolute;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.scan-center{width:8px;height:8px;border-radius:50%;background:var(--accent);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.loading-label{font-size:.9rem;color:rgba(255,255,255,.5);margin-bottom:1.25rem}
+.loading-steps{max-width:240px;margin:0 auto;display:flex;flex-direction:column;gap:.35rem}
+.ls{font-size:.78rem;padding:.32rem .8rem;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.3);transition:all .3s}
+.ls.active{background:rgba(88,166,255,.08);border-color:rgba(88,166,255,.2);color:var(--accent)}
+.ls.done{background:rgba(52,168,83,.06);border-color:rgba(52,168,83,.2);color:#7ee787}
+
+/* ── MODO BANNER ── */
+.modo-banner{display:none;padding:.6rem 1.5rem;text-align:center;font-size:.82rem;font-weight:600;border-bottom:2px solid}
+.modo-banner.auditor{background:#FFF8E1;border-color:#FBBC04;color:#7B4F00}
+.modo-banner.cliente{background:#E8F5E9;border-color:#34A853;color:#1B5E20}
+
+/* ── REPORT ── */
+#report{display:none;max-width:820px;margin:0 auto;padding:1.75rem 1rem 5rem}
+
+/* ── EMPRESA CARD ── */
+.empresa-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.25rem;display:flex;gap:1.25rem;align-items:flex-start;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.empresa-photo{width:80px;height:80px;border-radius:12px;object-fit:cover;flex-shrink:0;border:2px solid var(--border)}
+.empresa-photo-placeholder{width:80px;height:80px;border-radius:12px;background:var(--blue-bg);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0}
+.empresa-nome{font-size:1.2rem;font-weight:700;color:var(--text);margin-bottom:.2rem}
+.empresa-addr{font-size:.8rem;color:var(--text2);margin-bottom:.65rem;line-height:1.5}
+.tags{display:flex;flex-wrap:wrap;gap:.35rem}
+.tag{font-size:.7rem;font-weight:500;padding:.22rem .7rem;border-radius:100px;border:1px solid;display:inline-flex;align-items:center;gap:.3rem}
+.tag-blue{background:var(--blue-bg);border-color:rgba(66,133,244,.25);color:#1a56db}
+.tag-green{background:var(--green-bg);border-color:rgba(52,168,83,.25);color:#1B5E20}
+.tag-red{background:var(--red-bg);border-color:rgba(234,67,53,.25);color:#7F0000}
+.tag-yellow{background:var(--yellow-bg);border-color:rgba(251,188,4,.35);color:#7B4F00}
+.tag-purple{background:#f3e8ff;border-color:rgba(124,58,237,.25);color:#6b21a8}
+
+/* ── GAUGE ── */
+.gauge-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:2rem 1.5rem;margin-bottom:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.gauge-card-title{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--text2);text-align:center;margin-bottom:1.5rem}
+.gauge-layout{display:flex;align-items:center;justify-content:center;gap:3rem;flex-wrap:wrap}
+.gauge-svg-wrap{position:relative;width:200px;height:118px;flex-shrink:0}
+.gauge-overlay{position:absolute;bottom:0;left:50%;transform:translateX(-50%);text-align:center;width:130px}
+.gauge-num{font-size:2.8rem;font-weight:800;line-height:1;letter-spacing:-.04em;color:var(--text)}
+.gauge-pts{font-size:.65rem;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin-top:2px}
+.gauge-tier{display:inline-block;margin-top:.75rem;padding:.3rem 1.1rem;border-radius:100px;font-size:.78rem;font-weight:600;border:1px solid}
+.gauge-legend{display:flex;flex-direction:column;gap:1rem}
+.leg-row{display:flex;align-items:center;gap:.75rem}
+.leg-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;flex-shrink:0;border:1.5px solid}
+.leg-circle.fraco{background:var(--red-bg);border-color:rgba(234,67,53,.3);color:#7F0000}
+.leg-circle.razoavel{background:var(--yellow-bg);border-color:rgba(251,188,4,.4);color:#7B4F00}
+.leg-circle.bom{background:var(--green-bg);border-color:rgba(52,168,83,.3);color:#1B5E20}
+.leg-circle.manual{background:#f3e8ff;border-color:rgba(124,58,237,.25);color:#6b21a8}
+.leg-info-num{font-size:1.05rem;font-weight:700;color:var(--text);line-height:1}
+.leg-info-txt{font-size:.75rem;color:var(--text2);margin-top:1px}
+
+/* ── STATUS PILL ── */
+.status-pill{display:inline-flex;align-items:center;gap:.35rem;padding:.28rem .85rem;border-radius:100px;font-size:.78rem;font-weight:700;border:1.5px solid;flex-shrink:0;white-space:nowrap}
+.status-pill.bom{background:var(--green-bg);border-color:rgba(52,168,83,.3);color:#1B5E20}
+.status-pill.razoavel{background:var(--yellow-bg);border-color:rgba(251,188,4,.4);color:#7B4F00}
+.status-pill.fraco{background:var(--red-bg);border-color:rgba(234,67,53,.3);color:#7F0000}
+.status-pill.manual{background:#f3e8ff;border-color:rgba(124,58,237,.25);color:#6b21a8}
+
+/* ── SEC LABEL ── */
+.sec-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--text2);margin:1.75rem 0 .7rem .1rem;display:flex;align-items:center;gap:.6rem}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── ITEM CARD ── */
+.item-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.35rem;margin-bottom:.65rem;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:box-shadow .2s,border-color .2s}
+.item-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:var(--border2)}
+.item-top{display:flex;align-items:center;gap:.75rem;margin-bottom:.65rem;flex-wrap:wrap}
+.item-title{font-size:.92rem;font-weight:600;color:var(--text);flex:1;line-height:1.3;min-width:120px}
+.item-desc{font-size:.81rem;color:var(--text2);line-height:1.7;margin-bottom:.7rem}
+.item-det{font-size:.8rem;padding:.55rem .85rem;border-radius:8px;margin-bottom:.8rem;border-left:3px solid;line-height:1.65;font-weight:500}
+.item-det.bom{background:var(--green-bg);border-color:var(--green);color:#1B5E20}
+.item-det.razoavel{background:var(--yellow-bg);border-color:var(--yellow);color:#7B4F00}
+.item-det.fraco{background:var(--red-bg);border-color:var(--red);color:#7F0000}
+.item-det.manual{background:#f3e8ff;border-color:#a78bfa;color:#6b21a8}
+
+/* ── PROGRESS BAR ── */
+.prog-wrap{margin-top:.15rem}
+.prog-track{height:12px;border-radius:100px;background:linear-gradient(to right,#FFCDD2 0%,#FFCDD2 33%,#FFE082 33%,#FFE082 66%,#A5D6A7 66%,#A5D6A7 100%);position:relative;overflow:visible}
+.prog-arrow{position:absolute;top:-16px;font-size:13px;transform:translateX(-50%);transition:left .9s cubic-bezier(.34,1.56,.64,1);pointer-events:none;color:var(--text)}
+.prog-labs{display:flex;justify-content:space-between;margin-top:.3rem}
+.prog-labs span{font-size:.67rem;color:var(--text2);font-weight:500}
+
+/* ── DICA BOX (só no modo auditor) ── */
+.dica-box{background:var(--blue-bg);border:1px solid rgba(66,133,244,.2);border-radius:8px;padding:.65rem .9rem;margin-bottom:.8rem;font-size:.78rem;color:#1a56db;line-height:1.7}
+.dica-box strong{display:block;margin-bottom:.2rem;font-weight:600}
+.modo-cliente .dica-box{display:none}
+.modo-cliente .vwrap{display:none}
+.modo-cliente .item-det.manual{display:none}
+
+/* ── SELETOR DE DIAS ── */
+.dias-selector{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.85rem}
+.dia-btn{padding:.45rem .9rem;font-size:.76rem;font-weight:600;border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;border:1.5px solid var(--border2);background:var(--card2);color:var(--text2);transition:all .2s}
+.dia-btn:hover{border-color:var(--blue);color:var(--blue)}
+.dia-btn.sel-bom{background:var(--green-bg);border-color:rgba(52,168,83,.4);color:#1B5E20}
+.dia-btn.sel-razoavel{background:var(--yellow-bg);border-color:rgba(251,188,4,.4);color:#7B4F00}
+.dia-btn.sel-fraco{background:var(--red-bg);border-color:rgba(234,67,53,.3);color:#7F0000}
+
+/* ── SELETOR DE QUANTIDADE ── */
+.qtd-selector{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.85rem}
+.qtd-btn{padding:.45rem .9rem;font-size:.76rem;font-weight:600;border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;border:1.5px solid var(--border2);background:var(--card2);color:var(--text2);transition:all .2s}
+.qtd-btn:hover{border-color:var(--blue);color:var(--blue)}
+.qtd-btn.sel-bom{background:var(--green-bg);border-color:rgba(52,168,83,.4);color:#1B5E20}
+.qtd-btn.sel-razoavel{background:var(--yellow-bg);border-color:rgba(251,188,4,.4);color:#7B4F00}
+.qtd-btn.sel-fraco{background:var(--red-bg);border-color:rgba(234,67,53,.3);color:#7F0000}
+
+/* ── VALIDAÇÃO MANUAL (BOM/RAZ/FRACO) ── */
+.vwrap{display:flex;gap:.4rem;margin-top:.85rem;flex-wrap:wrap;align-items:center}
+.btn-maps{padding:.45rem .9rem;font-size:.76rem;font-weight:600;background:#fff7ed;color:#c2410c;border:1.5px solid #fed7aa;border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:.35rem;transition:all .2s}
+.btn-maps:hover{background:#ffedd5}
+.btn-v-bom{padding:.45rem .9rem;font-size:.76rem;font-weight:600;background:var(--green-bg);color:#1B5E20;border:1.5px solid rgba(52,168,83,.3);border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.btn-v-bom:hover{background:#c8e6c9}
+.btn-v-raz{padding:.45rem .9rem;font-size:.76rem;font-weight:600;background:var(--yellow-bg);color:#7B4F00;border:1.5px solid rgba(251,188,4,.4);border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.btn-v-raz:hover{background:#fff9c4}
+.btn-v-nok{padding:.45rem .9rem;font-size:.76rem;font-weight:600;background:var(--red-bg);color:#7F0000;border:1.5px solid rgba(234,67,53,.3);border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.btn-v-nok:hover{background:#ffcdd2}
+.validado-label{font-size:.79rem;font-weight:600;display:flex;align-items:center;gap:.35rem;padding:.35rem .75rem;border-radius:6px;border:1px solid}
+.validado-label.bom{color:#1B5E20;background:var(--green-bg);border-color:rgba(52,168,83,.25)}
+.validado-label.razoavel{color:#7B4F00;background:var(--yellow-bg);border-color:rgba(251,188,4,.35)}
+.validado-label.fraco{color:#7F0000;background:var(--red-bg);border-color:rgba(234,67,53,.25)}
+
+/* ── BARRA MODO ── */
+.modo-bar{position:fixed;bottom:0;left:0;right:0;z-index:200;display:none;background:var(--card);border-top:1px solid var(--border);padding:.75rem 1.5rem;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+.modo-bar-inner{max-width:820px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.modo-bar-info{font-size:.82rem;color:var(--text2)}
+.modo-bar-info strong{color:var(--text);font-weight:600}
+.btn-apresentar{background:linear-gradient(135deg,var(--green) 0%,#1B5E20 100%);color:#fff;border:none;border-radius:9px;padding:.7rem 1.5rem;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;display:flex;align-items:center;gap:.5rem}
+.btn-apresentar:hover{opacity:.88}
+.btn-voltar-auditor{background:var(--card2);color:var(--text2);border:1px solid var(--border);border-radius:9px;padding:.7rem 1.2rem;font-size:.84rem;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.btn-voltar-auditor:hover{background:var(--border);color:var(--text)}
+
+/* ── GANCHO ── */
+.gancho-card{background:linear-gradient(135deg,#0f0f1e 0%,#1a1a2e 100%);border:1px solid rgba(234,67,53,.2);border-radius:16px;padding:2rem;margin-top:1.75rem;position:relative;overflow:hidden}
+.gancho-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),var(--orange),var(--yellow))}
+.gancho-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.75rem;flex-wrap:wrap}
+.gancho-head h3{font-size:1rem;font-weight:700;color:#fff;display:flex;align-items:center;gap:.5rem}
+.gancho-alerta{background:rgba(234,67,53,.12);border:1px solid rgba(234,67,53,.25);border-radius:6px;padding:.3rem .8rem;font-size:.72rem;font-weight:600;color:#ff7b72}
+.gancho-sub{font-size:.82rem;color:rgba(255,255,255,.5);margin-bottom:1.5rem;line-height:1.75}
+.gancho-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:1.5rem}
+.gi{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:.85rem 1rem;display:flex;flex-direction:column;gap:.3rem}
+.gi-top{display:flex;align-items:center;gap:.45rem}
+.gi-icon{font-size:.95rem}
+.gi-titulo{font-size:.8rem;font-weight:600;color:rgba(255,255,255,.85)}
+.gi-desc{font-size:.74rem;color:rgba(255,255,255,.4);line-height:1.55;padding-left:1.45rem}
+.gi-stat{font-size:.7rem;font-weight:600;color:#ff9a6c;background:rgba(255,107,0,.08);border-radius:4px;padding:.12rem .5rem;display:inline-block;margin-left:1.45rem;margin-top:.1rem}
+.gancho-divider{height:1px;background:rgba(255,255,255,.06);margin:1.25rem 0}
+.gancho-urg{background:rgba(234,67,53,.06);border:1px solid rgba(234,67,53,.15);border-radius:10px;padding:1rem 1.1rem;margin-bottom:1.25rem;display:flex;gap:.75rem}
+.gancho-urg-icon{font-size:1.1rem;flex-shrink:0;margin-top:.15rem}
+.gancho-urg-text{font-size:.81rem;color:rgba(255,255,255,.5);line-height:1.75}
+.gancho-urg-text strong{color:#ff9a6c}
+.btn-cta{width:100%;background:linear-gradient(135deg,#2563eb 0%,var(--accent) 100%);color:#fff;border:none;border-radius:10px;padding:1rem;font-size:.95rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.btn-cta:hover{opacity:.88;transform:translateY(-1px)}
+
+/* ── AÇÕES ── */
+.actions{display:flex;gap:.65rem;margin-top:1.25rem}
+.btn-act{flex:1;padding:.72rem;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:.84rem;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:.4rem}
+.btn-act:hover{background:var(--card2);color:var(--text)}
+
+/* ── MODO CLIENTE — esconde elementos de auditoria ── */
+body.modo-cliente .dica-box{display:none!important}
+body.modo-cliente .vwrap{display:none!important}
+body.modo-cliente .dias-selector{display:none!important}
+body.modo-cliente .qtd-selector{display:none!important}
+body.modo-cliente .item-det.manual:not(.bom):not(.razoavel):not(.fraco){display:none!important}
+body.modo-cliente .actions{display:none!important}
+body.modo-cliente .modo-bar .btn-apresentar{display:none}
+body.modo-cliente .modo-bar .btn-voltar-auditor{display:flex}
+
+@media(max-width:560px){
+  .gancho-grid{grid-template-columns:1fr}
+  .gauge-layout{gap:1.5rem}
+  .empresa-card{flex-direction:column}
+  .actions,.modo-bar-inner{flex-direction:column}
+  .search-wrap{flex-direction:column}
+  .btn-scan{width:100%;justify-content:center}
+}
+@media print{
+  .topbar,.hero,.actions,.btn-cta,.vwrap,.dica-box,.modo-bar,.dias-selector,.qtd-selector,.gancho-urg,.modo-banner{display:none!important}
+  body,#report,body.modo-cliente{background:#fff!important}
+  .item-card,.gauge-card,.empresa-card,.gancho-card{box-shadow:none!important}
+  #report{display:block!important;padding:0}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">📍</div>
+    <div>
+      <div class="brand-name">Local<span>Score</span></div>
+      <div class="brand-tag">Diagnóstico de visibilidade no Google</div>
+    </div>
+  </div>
+  <div class="g-pills">
+    <div class="g-pill" style="background:#4285F4"></div>
+    <div class="g-pill" style="background:#EA4335"></div>
+    <div class="g-pill" style="background:#FBBC04"></div>
+    <div class="g-pill" style="background:#34A853"></div>
+    <span style="font-size:.7rem;color:rgba(255,255,255,.35);margin-left:5px">Google Places API</span>
+  </div>
+</div>
+
+<!-- BANNER DE MODO -->
+<div class="modo-banner auditor" id="modoBanner" style="display:none">
+  🔍 <strong>Modo Auditor</strong> — Valide os itens manuais antes de apresentar ao cliente
+</div>
+
+<div class="hero" id="heroSection">
+  <div class="hero-badge">✦ Diagnóstico gratuito em tempo real</div>
+  <h1>Seu negócio está<br><span class="hl">invisível no Google?</span></h1>
+  <p>Analisamos o perfil do Google Meu Negócio em segundos e revelamos o que está custando clientes para sua empresa.</p>
+  <div class="search-wrap">
+    <input type="text" id="inp" placeholder="Ex: Rei das Capas Caraguatatuba" onkeydown="if(event.key==='Enter')iniciar()">
+    <button class="btn-scan" id="btnScan" onclick="iniciar()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Analisar agora
+    </button>
+  </div>
+  <div class="search-hint">Inclua a cidade para resultados mais precisos</div>
+  <div class="hero-stats">
+    <div><div class="hero-stat-num">18</div><div class="hero-stat-txt">itens analisados</div></div>
+    <div><div class="hero-stat-num">~15s</div><div class="hero-stat-txt">tempo médio</div></div>
+    <div><div class="hero-stat-num">100%</div><div class="hero-stat-txt">gratuito</div></div>
+  </div>
+</div>
+
+<div id="loading" style="background:var(--dark)">
+  <div class="scan-ring-wrap"><div class="scan-ring"></div><div class="scan-ring-spin"></div><div class="scan-center"></div></div>
+  <div class="loading-label">Varrendo o perfil no Google...</div>
+  <div class="loading-steps">
+    <div class="ls" id="ls1">🔍 Localizando empresa</div>
+    <div class="ls" id="ls2">📊 Buscando dados do perfil</div>
+    <div class="ls" id="ls3">⭐ Analisando avaliações</div>
+    <div class="ls" id="ls4">📸 Verificando mídias e fotos</div>
+    <div class="ls" id="ls5">📋 Gerando relatório completo</div>
+  </div>
+</div>
+
+<div id="report">
+  <div id="cardEmpresa" class="empresa-card"></div>
+  <div class="gauge-card">
+    <div class="gauge-card-title">Score de visibilidade — LocalScore</div>
+    <div class="gauge-layout">
+      <div>
+        <div class="gauge-svg-wrap">
+          <svg width="200" height="118" viewBox="0 0 200 118" fill="none">
+            <path d="M16 108 A84 84 0 0 1 184 108" stroke="#F3F4F6" stroke-width="18" stroke-linecap="round"/>
+            <path d="M16 108 A84 84 0 0 1 184 108" stroke="#FFCDD2" stroke-width="18" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="176"/>
+            <path d="M16 108 A84 84 0 0 1 184 108" stroke="#FFE082" stroke-width="18" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="132"/>
+            <path d="M16 108 A84 84 0 0 1 184 108" stroke="#A5D6A7" stroke-width="18" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="79"/>
+            <path id="gaugeNeedle" d="M16 108 A84 84 0 0 1 184 108" stroke="#4285F4" stroke-width="6" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264"/>
+            <text x="10" y="122" font-size="10" fill="#EA4335" font-family="Inter,sans-serif">0</text>
+            <text x="93" y="18" font-size="10" fill="#B8860B" font-family="Inter,sans-serif" text-anchor="middle">50</text>
+            <text x="188" y="122" font-size="10" fill="#34A853" font-family="Inter,sans-serif" text-anchor="end">100</text>
+          </svg>
+          <div class="gauge-overlay">
+            <div class="gauge-num" id="gaugeNum">—</div>
+            <div class="gauge-pts">pontos</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:.75rem"><span class="gauge-tier" id="gaugeTier"></span></div>
+      </div>
+      <div class="gauge-legend">
+        <div class="leg-row"><div class="leg-circle fraco" id="legF">0</div><div><div class="leg-info-num" id="cntF">0</div><div class="leg-info-txt">Fraco</div></div></div>
+        <div class="leg-row"><div class="leg-circle razoavel" id="legR">0</div><div><div class="leg-info-num" id="cntR">0</div><div class="leg-info-txt">Razoável</div></div></div>
+        <div class="leg-row"><div class="leg-circle bom" id="legB">0</div><div><div class="leg-info-num" id="cntB">0</div><div class="leg-info-txt">Bom</div></div></div>
+        <div class="leg-row"><div class="leg-circle manual" id="legM">?</div><div><div class="leg-info-num" id="cntM">0</div><div class="leg-info-txt">A validar</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div id="secoes"></div>
+  <div class="gancho-card">
+    <div class="gancho-head"><h3>🔒 Análise especializada pendente</h3><span class="gancho-alerta">pontos críticos adicionais</span></div>
+    <p class="gancho-sub">A varredura automática cobriu os fundamentos. Os itens abaixo exigem análise especializada — e são exatamente onde a maioria das empresas <strong style="color:rgba(255,255,255,.7)">perde clientes para a concorrência sem perceber.</strong></p>
+    <div class="gancho-grid">
+      <div class="gi"><div class="gi-top"><span class="gi-icon">🔑</span><span class="gi-titulo">Palavras-chave na descrição</span></div><div class="gi-desc">O texto usa os termos que o cliente pesquisa?</div><span class="gi-stat">Descrição otimizada aumenta até 70% o alcance</span></div>
+      <div class="gi"><div class="gi-top"><span class="gi-icon">🛍️</span><span class="gi-titulo">Catálogo de produtos e serviços</span></div><div class="gi-desc">Itens cadastrados facilitam compra por impulso</div><span class="gi-stat">Perfis com catálogo recebem 40% mais cliques</span></div>
+      <div class="gi"><div class="gi-top"><span class="gi-icon">📢</span><span class="gi-titulo">Estratégia de posts</span></div><div class="gi-desc">Frequência, formato e conteúdo das publicações</div><span class="gi-stat">2,5× mais visualizações com posts semanais</span></div>
+      <div class="gi"><div class="gi-top"><span class="gi-icon">🗓️</span><span class="gi-titulo">Horário especial e feriados</span></div><div class="gi-desc">Feriados sem aviso = visita frustrada = nota ruim</div><span class="gi-stat">1 em cada 3 reclamações vem de horário errado</span></div>
+    </div>
+    <div class="gancho-divider"></div>
+    <div class="gancho-urg"><span class="gancho-urg-icon">⚠️</span><div class="gancho-urg-text"><strong>Enquanto esses pontos não são corrigidos</strong>, cada cliente que pesquisa sua empresa no Google pode estar escolhendo um concorrente com perfil mais completo. O Google ranqueia perfis ativos e bem configurados — não os mais antigos.</div></div>
+    <button class="btn-cta" onclick="abrirWpp()">📋 Solicitar auditoria especializada completa — sem custo</button>
+  </div>
+  <div class="actions">
+    <button class="btn-act" onclick="resetar()">← Nova análise</button>
+    <button class="btn-act" onclick="window.print()">⬇ Salvar PDF</button>
+  </div>
+</div>
+
+<!-- BARRA INFERIOR DE MODO -->
+<div class="modo-bar" id="modoBar">
+  <div class="modo-bar-inner">
+    <div class="modo-bar-info" id="modoBarInfo">Valide os itens manuais antes de apresentar</div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn-voltar-auditor" style="display:none" id="btnVoltarAuditor" onclick="modoAuditor()">← Voltar ao modo auditor</button>
+      <button class="btn-apresentar" id="btnApresentar" onclick="modoCliente()">
+        🎯 Apresentar ao cliente
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="map" style="display:none;width:1px;height:1px"></div>
+
+<script>
+var mapObj,svc,placeAtual,scoreBase=0,scoreBonus=0,mapUrl='',validados={};
+
+/* ── ITENS AUTOMÁTICOS ── */
+var ITENS_AUTO=[
+  // AVALIAÇÕES
+  {sec:'Avaliações',id:'av-media',titulo:'Média de avaliações',peso:3,
+   desc:'Analisa se a pontuação média transmite segurança ao cliente. Uma nota alta é decisiva na escolha entre concorrentes próximos.',
+   auto:function(p){
+     if(!p.rating)return{s:'fraco',pct:0,det:'Perfil sem avaliações registradas — sem reputação online.'};
+     if(p.rating>=4.5)return{s:'bom',pct:92,det:'Nota '+p.rating.toFixed(1)+' ⭐ — excelente! Transmite alta confiança ao cliente.'};
+     if(p.rating>=4.0)return{s:'razoavel',pct:55,det:'Nota '+p.rating.toFixed(1)+' ⭐ — razoável, mas perde para perfis acima de 4.5.'};
+     return{s:'fraco',pct:15,det:'Nota '+p.rating.toFixed(1)+' ⭐ — nota baixa afasta clientes imediatamente.'};
+   }},
+  {sec:'Avaliações',id:'av-qtd',titulo:'Volume de avaliações',peso:2,
+   desc:'Analisa se o número de avaliações é suficiente para transmitir credibilidade e histórico de atendimento.',
+   auto:function(p){
+     var n=p.user_ratings_total||0;
+     if(n>=50)return{s:'bom',pct:100,det:n+' avaliações — volume saudável e confiável para o mercado.'};
+     if(n>=10)return{s:'razoavel',pct:50,det:n+' avaliações — razoável, mas precisa crescer para competir.'};
+     return{s:'fraco',pct:5,det:n+' avaliações — insuficiente para gerar confiança no cliente.'};
+   }},
+  {sec:'Avaliações',id:'av-texto',titulo:'Qualidade — avaliações com comentário',peso:2,
+   desc:'O Google usa o conteúdo dos comentários para entender seu negócio e ranquear nas buscas certas.',
+   auto:function(p){
+     if(!p.reviews||p.reviews.length===0)return{s:'fraco',pct:5,det:'Nenhuma avaliação com texto detectada via API.'};
+     var ct=p.reviews.filter(function(r){return r.text&&r.text.length>10}).length;
+     var pct=Math.round((ct/p.reviews.length)*100);
+     if(pct>=60)return{s:'bom',pct:88,det:pct+'% das avaliações recentes têm texto — boa riqueza de palavras-chave.'};
+     if(pct>0)return{s:'razoavel',pct:42,det:pct+'% têm texto — muitos clientes deixam só estrelas, sem conteúdo.'};
+     return{s:'fraco',pct:5,det:'0% das avaliações recentes têm comentário escrito.'};
+   }},
+  // INFORMAÇÕES
+  {sec:'Informações do perfil',id:'pf-telefone',titulo:'Número de telefone',peso:3,
+   desc:'Uma das informações mais críticas. Sem telefone, o cliente não consegue contato direto e busca o concorrente.',
+   auto:function(p){
+     if(p.formatted_phone_number)return{s:'bom',pct:100,det:'Número registrado: '+p.formatted_phone_number};
+     return{s:'fraco',pct:0,det:'Telefone não cadastrado — perda direta de contatos e clientes.'};
+   }},
+  {sec:'Informações do perfil',id:'pf-horario',titulo:'Horário de funcionamento',peso:3,
+   desc:'Clientes verificam o horário antes de visitar. Perfil sem horário gera desconfiança e visitas frustradas.',
+   auto:function(p){
+     if(p.opening_hours&&p.opening_hours.weekday_text&&p.opening_hours.weekday_text.length>0)
+       return{s:'bom',pct:100,det:'Horários definidos: '+p.opening_hours.weekday_text[0]+' (e demais dias).'};
+     return{s:'fraco',pct:0,det:'Horário de funcionamento não informado no perfil.'};
+   }},
+  {sec:'Informações do perfil',id:'pf-website',titulo:'Website vinculado',peso:2,
+   desc:'Site real = credibilidade máxima. Link para rede social ou WhatsApp é razoável, mas não substitui um site próprio.',
+   auto:function(p){
+     if(!p.website)return{s:'fraco',pct:0,det:'Nenhum site vinculado — perda de credibilidade e tráfego orgânico.'};
+     var w=p.website.toLowerCase();
+     if(w.includes('instagram.com')||w.includes('facebook.com')||w.includes('wa.me')||w.includes('linktr')||w.includes('whatsapp'))
+       return{s:'razoavel',pct:40,det:'Link social detectado ('+p.website.replace(/^https?:\/\//,'').split('/')[0]+'). O Google prefere um site próprio para melhor ranqueamento.'};
+     return{s:'bom',pct:100,det:'Site próprio vinculado: '+p.website.replace(/^https?:\/\//,'').split('/')[0]};
+   }},
+  {sec:'Informações do perfil',id:'pf-nome',titulo:'Nome do negócio (conformidade)',peso:2,
+   desc:'Nomes com palavras-chave forçadas ou muito longos podem levar à suspensão do perfil pelo Google.',
+   auto:function(p){
+     var n=p.name?p.name.length:0;
+     if(n<=50)return{s:'bom',pct:100,det:'Nome com '+n+' caracteres — dentro do padrão seguro do Google (máx. 50).'};
+     if(n<=80)return{s:'razoavel',pct:45,det:'Nome com '+n+' caracteres — atenção ao risco de penalização.'};
+     return{s:'fraco',pct:0,det:'Nome com '+n+' caracteres — risco real de suspensão pelo Google.'};
+   }},
+  {sec:'Informações do perfil',id:'pf-categorias',titulo:'Categorias do negócio',peso:2,
+   desc:'Categorias corretas e secundárias aumentam o alcance orgânico em buscas relacionadas ao negócio.',
+   auto:function(p){
+     // Filtro ampliado — remove apenas as tags genéricas do Google
+     var generico=['point_of_interest','establishment','premise','street_address','route','locality','political','country','postal_code'];
+     var cats=(p.types||[]).filter(function(t){return generico.indexOf(t)===-1;});
+     if(cats.length>=3)return{s:'bom',pct:100,det:cats.length+' categorias detectadas ('+cats.slice(0,3).map(function(c){return c.replace(/_/g,' ')}).join(', ')+'...) — boa cobertura orgânica.'};
+     if(cats.length===2)return{s:'razoavel',pct:55,det:'2 categorias detectadas — razoável, mas há espaço para ampliar o alcance.'};
+     return{s:'fraco',pct:10,det:'Apenas 1 categoria detectada — oportunidade de expansão perdida.'};
+   }},
+  {sec:'Informações do perfil',id:'pf-servicos',titulo:'Serviços cadastrados no perfil',peso:2,
+   desc:'Adicionar serviços faz com que clientes te encontrem mais facilmente e entendam rapidamente o que você oferece.',
+   auto:function(p){
+     var generico=['point_of_interest','establishment','premise','street_address'];
+     var cats=(p.types||[]).filter(function(t){return generico.indexOf(t)===-1;});
+     var score=cats.length+(p.website?1:0)+((p.opening_hours&&p.opening_hours.weekday_text)?1:0);
+     if(score>=4)return{s:'bom',pct:100,det:'O negócio possui serviços e informações adicionadas ao perfil.'};
+     if(score>=2)return{s:'razoavel',pct:50,det:'Informações parcialmente preenchidas — catálogo de serviços pode estar incompleto.'};
+     return{s:'fraco',pct:5,det:'Poucos dados de serviços detectados — cadastre seus serviços no painel GMB.'};
+   }},
+  // FOTOS
+  {sec:'Fotos e mídias',id:'md-total',titulo:'Volume total de fotos na vitrine',peso:2,
+   desc:'Perfis com fotos recebem 42% mais solicitações de rota e 35% mais cliques para o site.',
+   auto:function(p){
+     var n=p.photos?p.photos.length:0;
+     if(n>=10)return{s:'bom',pct:100,det:n+' fotos na vitrine — banco de imagens saudável.'};
+     if(n>=3)return{s:'razoavel',pct:50,det:n+' fotos — abaixo do recomendado (mínimo 10 fotos).'};
+     return{s:'fraco',pct:5,det:(n===0?'Nenhuma foto detectada':'Apenas '+n+' foto(s)')+' — perfil pouco atrativo visualmente.'};
+   }},
+  {sec:'Fotos e mídias',id:'md-clientes',titulo:'Fotos enviadas por clientes',peso:1,
+   desc:'Fotos de clientes são prova social autêntica — o Google as trata como conteúdo de alta credibilidade.',
+   auto:function(p){
+     if(!p.photos||p.photos.length===0)return{s:'fraco',pct:0,det:'Sem fotos de clientes detectadas no perfil.'};
+     var cli=p.photos.filter(function(ph){var c=ph.html_attributions&&ph.html_attributions.length>0?ph.html_attributions[0]:'';return c&&!c.includes(p.name);}).length;
+     if(cli>=3)return{s:'bom',pct:100,det:cli+' fotos de clientes na vitrine — excelente prova social!'};
+     if(cli>=1)return{s:'razoavel',pct:45,det:cli+' foto(s) de clientes — incentive mais envios pós-atendimento.'};
+     return{s:'fraco',pct:0,det:'Nenhuma foto de cliente identificada na vitrine principal.'};
+   }},
+];
+
+/* ── ITENS MANUAIS ── */
+var ITENS_MANUAL=[
+  // AVALIAÇÕES
+  {sec:'Avaliações',id:'mn-recencia',titulo:'Recência das avaliações',peso:2,tipo:'dias',
+   desc:'O Google valoriza perfis com avaliações recentes. Perfis parados perdem posição progressivamente.',
+   dica:'<strong>Como verificar:</strong> Abra o perfil no Maps e veja a data da avaliação mais recente. Selecione abaixo quantos dias faz.',
+   opcoes:[
+     {label:'Hoje / ontem',s:'bom',pct:100,pts:4,det:'Última avaliação recentíssima — perfil muito ativo e relevante para o Google.'},
+     {label:'2 a 7 dias',s:'bom',pct:90,pts:4,det:'Última avaliação nos últimos 7 dias — perfil ativo e bem posicionado.'},
+     {label:'8 a 30 dias',s:'razoavel',pct:55,pts:2,det:'Última avaliação entre 8 e 30 dias — frequência razoável, mas pode melhorar.'},
+     {label:'31 a 90 dias',s:'razoavel',pct:35,pts:1,det:'Última avaliação entre 1 e 3 meses — perfil perdendo relevância progressivamente.'},
+     {label:'+ de 90 dias',s:'fraco',pct:5,pts:0,det:'Última avaliação há mais de 90 dias — perfil estagnado, perde posições no ranking.'},
+   ]},
+
+  // RESPOSTAS
+  {sec:'Avaliações',id:'mn-respostas',titulo:'Respostas às avaliações',peso:2,tipo:'qualidade',
+   desc:'Responder avaliações mostra que o dono se importa. O Google valoriza perfis onde o proprietário interage.',
+   dica:'<strong>Como verificar (celular):</strong> Maps → empresa → Avaliações → veja se há "Resposta do proprietário". <strong>Computador:</strong> painel do Google Business Profile → Avaliações.',
+   opcoes:[
+     {label:'✅ Responde todas',s:'bom',pct:100,pts:4,det:'Proprietário responde todas as avaliações com texto personalizado — demonstra comprometimento exemplar.'},
+     {label:'⚠️ Responde algumas',s:'razoavel',pct:50,pts:2,det:'Responde de forma inconsistente — clientes percebem a falta de atenção em certas avaliações.'},
+     {label:'❌ Não responde',s:'fraco',pct:5,pts:0,det:'Avaliações sem resposta do proprietário — clientes percebem descaso, prejudica retenção e ranking.'},
+   ]},
+
+  // DESCRIÇÃO
+  {sec:'Informações do perfil',id:'mn-descricao',titulo:'Descrição da empresa',peso:2,tipo:'qualidade',
+   desc:'A descrição é a oportunidade de usar palavras-chave e contar a história do negócio ao Google e ao cliente.',
+   dica:'<strong>Como verificar:</strong> Abra o perfil no Maps → role até "Sobre". <strong>Bom:</strong> texto completo com +150 caracteres descrevendo o negócio. <strong>Razoável:</strong> texto curto ou genérico (50-150 caracteres). <strong>Fraco:</strong> sem descrição.',
+   opcoes:[
+     {label:'✅ Completa e relevante',s:'bom',pct:100,pts:4,det:'Descrição completa com conteúdo relevante — aumenta alcance orgânico e ajuda o Google a entender o negócio.'},
+     {label:'⚠️ Curta ou genérica',s:'razoavel',pct:45,pts:2,det:'Descrição presente mas pouco otimizada — oportunidade de palavras-chave parcialmente aproveitada.'},
+     {label:'❌ Sem descrição',s:'fraco',pct:0,pts:0,det:'Sem descrição — oportunidade de palavras-chave totalmente perdida, menor visibilidade orgânica.'},
+   ]},
+
+  // VÍDEOS
+  {sec:'Fotos e mídias',id:'mn-videos',titulo:'Vídeos no perfil',peso:2,tipo:'qtd',
+   desc:'Estudos mostram que vídeos atraem e fidelizam clientes mais do que outras formas de mídia.',
+   dica:'<strong>Como verificar:</strong> No perfil do Maps → Fotos → Vídeos. Selecione abaixo a quantidade encontrada.',
+   opcoes:[
+     {label:'3 ou mais vídeos',s:'bom',pct:100,pts:4,det:'3 ou mais vídeos — volume excelente para engajamento e tempo de permanência no perfil.'},
+     {label:'1 ou 2 vídeos',s:'razoavel',pct:50,pts:2,det:'1 ou 2 vídeos — abaixo do mínimo recomendado pelo Google (3 vídeos).'},
+     {label:'Nenhum vídeo',s:'fraco',pct:0,pts:0,det:'Sem vídeos no perfil — oportunidade de engajamento desperdiçada.'},
+   ]},
+
+  // ÚLTIMA MÍDIA
+  {sec:'Fotos e mídias',id:'mn-ultimamidia',titulo:'Data da última mídia publicada',peso:2,tipo:'dias',
+   desc:'Publicar fotos ou vídeos periodicamente demonstra que o perfil está ativo. O Google favorece perfis com mídias recentes.',
+   dica:'<strong>Como verificar:</strong> No perfil, veja a data da foto ou vídeo mais recente postado pelo proprietário.',
+   opcoes:[
+     {label:'Últimos 7 dias',s:'bom',pct:100,pts:4,det:'Mídia publicada nos últimos 7 dias — perfil muito ativo, sinaliza engajamento constante ao Google.'},
+     {label:'8 a 30 dias',s:'bom',pct:80,pts:4,det:'Mídia publicada nos últimos 30 dias — dentro do prazo recomendado pelo Google.'},
+     {label:'31 a 90 dias',s:'razoavel',pct:45,pts:2,det:'Última mídia entre 1 e 3 meses — frequência abaixo do ideal, perfil começa a perder relevância.'},
+     {label:'+ de 90 dias',s:'fraco',pct:5,pts:0,det:'Última mídia há mais de 90 dias — perfil aparenta abandono para o algoritmo do Google.'},
+   ]},
+
+  // POSTS
+  {sec:'Engajamento',id:'mn-posts',titulo:'Posts e publicações recentes',peso:2,tipo:'dias',
+   desc:'O Google considera publicações recentes um sinal de atividade. Posts frequentes aumentam a visibilidade organicamente.',
+   dica:'<strong>O Google considera "recente":</strong> publicação dos últimos <strong>7 dias</strong>. <strong>Como verificar (celular):</strong> Maps → empresa → "Atualizações". <strong>Computador:</strong> Business Profile → Publicações.',
+   opcoes:[
+     {label:'Últimos 7 dias',s:'bom',pct:100,pts:4,det:'Post nos últimos 7 dias — o Google favorece perfis com conteúdo novo e frequente.'},
+     {label:'8 a 30 dias',s:'razoavel',pct:55,pts:2,det:'Último post entre 8 e 30 dias — razoável, mas abaixo do ideal para o algoritmo do Google.'},
+     {label:'+ de 30 dias',s:'fraco',pct:5,pts:0,det:'Sem publicações há mais de 30 dias — perfil aparece como inativo, perde relevância.'},
+   ]},
+
+  // CAPA E LOGO
+  {sec:'Engajamento',id:'mn-capa',titulo:'Foto de capa e logotipo',peso:2,tipo:'qualidade',
+   desc:'Foto de capa estratégica e logotipo profissional transmitem credibilidade e tornam o perfil memorável no Maps.',
+   dica:'<strong>Como verificar:</strong> Abra o perfil no Maps. <strong>Capa:</strong> primeira foto grande no topo — deve ser atrativa. <strong>Logo:</strong> miniatura circular visível.',
+   opcoes:[
+     {label:'✅ Capa + logo profissionais',s:'bom',pct:100,pts:4,det:'Capa estratégica e logotipo presentes — identidade visual forte e memorável no Google Maps.'},
+     {label:'⚠️ Apenas um dos dois',s:'razoavel',pct:50,pts:2,det:'Capa ou logo ausente — identidade visual incompleta, perde impacto no primeiro contato.'},
+     {label:'❌ Sem capa nem logo',s:'fraco',pct:0,pts:0,det:'Sem identidade visual — perfil genérico, perde para concorrentes com imagem profissional.'},
+   ]},
+];
+
+/* ── ESTADO GLOBAL ── */
+function recalcular(){
+  var s=Math.min(100,Math.max(0,scoreBase+scoreBonus));
+  animarGauge(s);
+}
+
+/* ── INICIAR ── */
+function iniciar(){
+  var val=document.getElementById('inp').value.trim();
+  if(!val){alert('Digite o nome da empresa.');return;}
+  document.getElementById('btnScan').disabled=true;
+  document.getElementById('loading').style.display='block';
+  document.getElementById('report').style.display='none';
+  document.getElementById('modoBar').style.display='none';
+  document.getElementById('modoBanner').style.display='none';
+  scoreBase=0;scoreBonus=0;validados={};
+  animLoadingSteps();
+  mapObj=new google.maps.Map(document.getElementById('map'),{center:{lat:-23.55,lng:-46.63},zoom:12});
+  svc=new google.maps.places.PlacesService(mapObj);
+  svc.textSearch({query:val,fields:['place_id','name']},function(res,st){
+    if(st===google.maps.places.PlacesServiceStatus.OK&&res.length>0){
+      buscarDetalhes(res[0].place_id);
+    }else{
+      document.getElementById('loading').style.display='none';
+      document.getElementById('btnScan').disabled=false;
+      alert('Empresa não encontrada. Inclua a cidade junto ao nome.');
+    }
+  });
+}
+
+function animLoadingSteps(){
+  ['ls1','ls2','ls3','ls4','ls5'].forEach(function(id,i){
+    setTimeout(function(){document.getElementById(id).classList.add('active');},i*600);
+    setTimeout(function(){document.getElementById(id).classList.remove('active');document.getElementById(id).classList.add('done');},i*600+1400);
+  });
+}
+
+function buscarDetalhes(pid){
+  svc.getDetails({
+    placeId:pid,
+    fields:['place_id','name','formatted_phone_number','formatted_address','website',
+            'rating','user_ratings_total','opening_hours','photos','reviews',
+            'types','editorial_summary','business_status']
+  },function(place,st){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('btnScan').disabled=false;
+    if(st===google.maps.places.PlacesServiceStatus.OK){
+      placeAtual=place;
+      mapUrl='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(place.name)+'&query_place_id='+place.place_id;
+      renderRelatorio(place);
+    }else{
+      alert('Erro ao buscar detalhes. Tente novamente.');
+    }
+  });
+}
+
+/* ── RENDER ── */
+function renderRelatorio(place){
+  // FOTO
+  var fotoHtml='';
+  if(place.photos&&place.photos.length>0){
+    try{var url=place.photos[0].getUrl({maxWidth:160,maxHeight:160});fotoHtml='<img class="empresa-photo" src="'+url+'" alt="Foto" onerror="this.outerHTML=\'<div class=empresa-photo-placeholder>🏢</div>\'">';}
+    catch(e){fotoHtml='<div class="empresa-photo-placeholder">🏢</div>';}
+  }else{fotoHtml='<div class="empresa-photo-placeholder">🏢</div>';}
+
+  var generico=['point_of_interest','establishment','premise','street_address','route','locality','political','country','postal_code'];
+  var tipos=(place.types||[]).filter(function(t){return generico.indexOf(t)===-1;});
+  var tipoLabel=tipos.length>0?tipos[0].replace(/_/g,' '):'negócio local';
+  var ok=place.business_status==='OPERATIONAL';
+
+  document.getElementById('cardEmpresa').innerHTML=
+    fotoHtml+
+    '<div style="flex:1;min-width:0">'+
+      '<div class="empresa-nome">'+place.name+'</div>'+
+      '<div class="empresa-addr">'+(place.formatted_address||'')+'</div>'+
+      '<div class="tags">'+
+        '<span class="tag '+(ok?'tag-green':'tag-red')+'">'+(ok?'✓ Ativo no Google':'⚠ '+place.business_status)+'</span>'+
+        (place.formatted_phone_number?'<span class="tag tag-blue">📞 '+place.formatted_phone_number+'</span>':'')+
+        (place.rating?'<span class="tag '+(place.rating>=4.5?'tag-green':place.rating>=4.0?'tag-yellow':'tag-red')+'">⭐ '+place.rating.toFixed(1)+' ('+place.user_ratings_total+')</span>':'')+
+        '<span class="tag tag-purple" style="text-transform:capitalize">'+tipoLabel+'</span>'+
+      '</div>'+
+    '</div>';
+
+  // AGRUPAR
+  var secs={};
+  function addSec(it,tipo){if(!secs[it.sec])secs[it.sec]=[];secs[it.sec].push({it:it,tipo:tipo});}
+  ITENS_AUTO.forEach(function(it){addSec(it,'auto');});
+  ITENS_MANUAL.forEach(function(it){addSec(it,'manual');});
+
+  var totalPeso=0,pontos=0,cF=0,cR=0,cB=0,cM=0,html='';
+  Object.keys(secs).forEach(function(secNome){
+    html+='<div class="sec-label">'+secNome+'</div>';
+    secs[secNome].forEach(function(obj){
+      var it=obj.it;
+      if(obj.tipo==='auto'){
+        var r=it.auto(place);
+        totalPeso+=it.peso*2;
+        if(r.s==='bom'){pontos+=it.peso*2;cB++;}
+        else if(r.s==='razoavel'){pontos+=it.peso*1;cR++;}
+        else{cF++;}
+        html+=renderAuto(it,r);
+      }else{
+        cM++;
+        html+=renderManual(it);
+      }
+    });
+  });
+
+  scoreBase=totalPeso>0?Math.round((pontos/totalPeso)*75):0;
+  recalcular();
+  document.getElementById('cntF').textContent=cF;document.getElementById('legF').textContent=cF;
+  document.getElementById('cntR').textContent=cR;document.getElementById('legR').textContent=cR;
+  document.getElementById('cntB').textContent=cB;document.getElementById('legB').textContent=cB;
+  document.getElementById('cntM').textContent=cM;document.getElementById('legM').textContent=cM;
+  document.getElementById('secoes').innerHTML=html;
+  document.getElementById('report').style.display='block';
+  document.getElementById('modoBar').style.display='block';
+  document.getElementById('modoBanner').style.display='block';
+  document.getElementById('modoBanner').className='modo-banner auditor';
+  document.getElementById('modoBanner').innerHTML='🔍 <strong>Modo Auditor</strong> — Valide os itens manuais antes de apresentar ao cliente';
+  document.getElementById('btnApresentar').style.display='flex';
+  document.getElementById('btnVoltarAuditor').style.display='none';
+  window.scrollTo({top:document.getElementById('report').offsetTop-60,behavior:'smooth'});
+}
+
+function renderAuto(it,r){
+  var badgeTxt=r.s==='bom'?'✓ Bom':r.s==='razoavel'?'⚠ Razoável':'✗ Fraco';
+  return '<div class="item-card">'+
+    '<div class="item-top"><span class="status-pill '+r.s+'">'+badgeTxt+'</span><span class="item-title">'+it.titulo+'</span></div>'+
+    '<div class="item-desc">'+it.desc+'</div>'+
+    '<div class="item-det '+r.s+'">'+r.det+'</div>'+
+    '<div class="prog-wrap"><div class="prog-track"><span class="prog-arrow" style="left:'+r.pct+'%">▼</span></div>'+
+    '<div class="prog-labs"><span>Fraco</span><span>Razoável</span><span>Bom</span></div></div>'+
+  '</div>';
+}
+
+function renderManual(it){
+  var totalManualPeso=ITENS_MANUAL.reduce(function(a,i){return a+i.peso*2;},0);
+  var opcoesHtml='';
+
+  if(it.tipo==='dias'||it.tipo==='qtd'){
+    opcoesHtml='<div class="'+(it.tipo==='dias'?'dias-selector':'qtd-selector')+'" id="sel-'+it.id+'">';
+    it.opcoes.forEach(function(op,idx){
+      opcoesHtml+='<button class="'+(it.tipo==='dias'?'dia-btn':'qtd-btn')+'" onclick="selecionarOpcao(\''+it.id+'\','+idx+',\''+it.id+'\')" id="opbtn-'+it.id+'-'+idx+'">'+op.label+'</button>';
+    });
+    opcoesHtml+='</div>';
+  }else{
+    // qualidade — botões descritivos
+    opcoesHtml='<div class="vwrap" id="sel-'+it.id+'">';
+    opcoesHtml+='<button class="btn-maps" onclick="window.open(\''+mapUrl+'\',\'_blank\')">🗺 Abrir no Maps</button>';
+    it.opcoes.forEach(function(op,idx){
+      var cls=op.s==='bom'?'btn-v-bom':op.s==='razoavel'?'btn-v-raz':'btn-v-nok';
+      opcoesHtml+='<button class="'+cls+'" onclick="selecionarOpcao(\''+it.id+'\','+idx+',\''+it.id+'\')">'+op.label+'</button>';
+    });
+    opcoesHtml+='</div>';
+  }
+
+  return '<div class="item-card" id="card-'+it.id+'">'+
+    '<div class="item-top"><span class="status-pill manual" id="badge-'+it.id+'">? A validar</span><span class="item-title">'+it.titulo+'</span></div>'+
+    '<div class="item-desc">'+it.desc+'</div>'+
+    (it.dica?'<div class="dica-box">'+it.dica+'</div>':'')+
+    '<div class="item-det manual" id="det-'+it.id+'">Selecione abaixo a opção que corresponde ao que você encontrou no perfil.</div>'+
+    '<div class="prog-wrap" id="prog-'+it.id+'"><div class="prog-track"><span class="prog-arrow" style="left:2%">▼</span></div>'+
+    '<div class="prog-labs"><span>Fraco</span><span>Razoável</span><span>Bom</span></div></div>'+
+    opcoesHtml+
+  '</div>';
+}
+
+function selecionarOpcao(itemId,opcaoIdx,elId){
+  var it=ITENS_MANUAL.find(function(i){return i.id===itemId;});
+  if(!it)return;
+  var op=it.opcoes[opcaoIdx];
+  var totalManualPeso=ITENS_MANUAL.reduce(function(a,i){return a+i.peso*2;},0);
+
+  // Remover pontos anteriores se já havia seleção
+  if(validados[itemId]!==undefined){
+    var oldOp=it.opcoes[validados[itemId]];
+    var oldBonus=Math.round((oldOp.pts/totalManualPeso)*25);
+    scoreBonus=Math.max(0,scoreBonus-oldBonus);
+    // Reverter contadores
+    var oldS=oldOp.s;
+    var cOld=parseInt(document.getElementById('cnt'+oldS.charAt(0).toUpperCase()+oldS.slice(1).replace('é','e').replace('á','a').replace('weak','F')).textContent)||0;
+    // reverter contador antigo
+    if(oldS==='bom'){var cb=parseInt(document.getElementById('cntB').textContent)||0;document.getElementById('cntB').textContent=Math.max(0,cb-1);document.getElementById('legB').textContent=Math.max(0,cb-1);}
+    else if(oldS==='razoavel'){var cr=parseInt(document.getElementById('cntR').textContent)||0;document.getElementById('cntR').textContent=Math.max(0,cr-1);document.getElementById('legR').textContent=Math.max(0,cr-1);}
+    else{var cf=parseInt(document.getElementById('cntF').textContent)||0;document.getElementById('cntF').textContent=Math.max(0,cf-1);document.getElementById('legF').textContent=Math.max(0,cf-1);}
+  }else{
+    // primeira vez — remove do contador de manuais
+    var cM=parseInt(document.getElementById('cntM').textContent)||0;
+    document.getElementById('cntM').textContent=Math.max(0,cM-1);
+    document.getElementById('legM').textContent=Math.max(0,cM-1);
+  }
+
+  validados[itemId]=opcaoIdx;
+  scoreBonus+=Math.round((op.pts/totalManualPeso)*25);
+  if(scoreBonus>25)scoreBonus=25;
+  recalcular();
+
+  // Atualizar visual do item
+  var badgeTxt=op.s==='bom'?'✓ Bom':op.s==='razoavel'?'⚠ Razoável':'✗ Fraco';
+  document.getElementById('badge-'+itemId).textContent=badgeTxt;
+  document.getElementById('badge-'+itemId).className='status-pill '+op.s;
+  document.getElementById('det-'+itemId).textContent=op.det;
+  document.getElementById('det-'+itemId).className='item-det '+op.s;
+  document.getElementById('prog-'+itemId).innerHTML=
+    '<div class="prog-track"><span class="prog-arrow" style="left:'+op.pct+'%">▼</span></div>'+
+    '<div class="prog-labs"><span>Fraco</span><span>Razoável</span><span>Bom</span></div>';
+
+  // Destacar botão selecionado
+  it.opcoes.forEach(function(_,i){
+    var btn=document.getElementById('opbtn-'+itemId+'-'+i);
+    if(btn){btn.className=btn.className.replace(/sel-\w+/g,'');if(i===opcaoIdx)btn.classList.add('sel-'+op.s);}
+  });
+
+  // Atualizar contadores
+  if(op.s==='bom'){var cb=parseInt(document.getElementById('cntB').textContent)||0;document.getElementById('cntB').textContent=cb+1;document.getElementById('legB').textContent=cb+1;}
+  else if(op.s==='razoavel'){var cr=parseInt(document.getElementById('cntR').textContent)||0;document.getElementById('cntR').textContent=cr+1;document.getElementById('legR').textContent=cr+1;}
+  else{var cf=parseInt(document.getElementById('cntF').textContent)||0;document.getElementById('cntF').textContent=cf+1;document.getElementById('legF').textContent=cf+1;}
+}
+
+/* ── MODOS AUDITOR / CLIENTE ── */
+function modoCliente(){
+  document.body.classList.add('modo-cliente');
+  document.getElementById('modoBanner').className='modo-banner cliente';
+  document.getElementById('modoBanner').innerHTML='🎯 <strong>Modo Apresentação</strong> — Visão do cliente ativa';
+  document.getElementById('btnApresentar').style.display='none';
+  document.getElementById('btnVoltarAuditor').style.display='flex';
+  document.getElementById('heroSection').style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function modoAuditor(){
+  document.body.classList.remove('modo-cliente');
+  document.getElementById('modoBanner').className='modo-banner auditor';
+  document.getElementById('modoBanner').innerHTML='🔍 <strong>Modo Auditor</strong> — Valide os itens manuais antes de apresentar ao cliente';
+  document.getElementById('btnApresentar').style.display='flex';
+  document.getElementById('btnVoltarAuditor').style.display='none';
+  document.getElementById('heroSection').style.display='block';
+}
+
+/* ── GAUGE ── */
+function animarGauge(score){
+  var needle=document.getElementById('gaugeNeedle');
+  var numEl=document.getElementById('gaugeNum');
+  var tier=document.getElementById('gaugeTier');
+  var total=264,target=total-Math.round((score/100)*total);
+  var current=parseInt(needle.getAttribute('stroke-dashoffset'))||total;
+  var step=Math.max(1,Math.abs(current-target)/50);
+  clearInterval(window._gi);
+  window._gi=setInterval(function(){
+    if(current>target)current=Math.max(current-step,target);
+    else current=Math.min(current+step,target);
+    needle.setAttribute('stroke-dashoffset',Math.round(current));
+    var n=Math.round(((total-current)/total)*100);
+    numEl.textContent=n;
+    numEl.style.color=n>=80?'#1B5E20':n>=50?'#7B4F00':'#7F0000';
+    if(Math.abs(current-target)<1.5){numEl.textContent=score;clearInterval(window._gi);}
+  },16);
+  if(score>=80){tier.textContent='✓ Perfil saudável';tier.style.cssText='background:var(--green-bg);border-color:rgba(52,168,83,.3);color:#1B5E20';}
+  else if(score>=50){tier.textContent='⚠ Necessita melhorias';tier.style.cssText='background:var(--yellow-bg);border-color:rgba(251,188,4,.4);color:#7B4F00';}
+  else{tier.textContent='✗ Perfil em risco';tier.style.cssText='background:var(--red-bg);border-color:rgba(234,67,53,.3);color:#7F0000';}
+}
+
+function abrirWpp(){
+  var nome=placeAtual?placeAtual.name:'esta empresa';
+  var score=parseInt(document.getElementById('gaugeNum').textContent)||0;
+  var msg='Olá! Vi o relatório LocalScore da *'+nome+'* com score de '+score+'/100. Gostaria de solicitar a auditoria especializada completa. Pode me ajudar?';
+  window.open('https://wa.me/5511967581409?text='+encodeURIComponent(msg),'_blank');
+}
+
+function resetar(){
+  document.body.classList.remove('modo-cliente');
+  document.getElementById('heroSection').style.display='block';
+  document.getElementById('inp').value='';
+  document.getElementById('report').style.display='none';
+  document.getElementById('modoBar').style.display='none';
+  document.getElementById('modoBanner').style.display='none';
+  ['ls1','ls2','ls3','ls4','ls5'].forEach(function(id){document.getElementById(id).classList.remove('active','done');});
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.getElementById('inp').focus();
+}
+</script>
+</body>
+</html>

@@ -215,6 +215,25 @@ body.modo-cliente .actions{display:none!important}
 body.modo-cliente .modo-bar .btn-apresentar{display:none}
 body.modo-cliente .modo-bar .btn-voltar-auditor{display:flex}
 
+/* ── MODO PROSPECÇÃO ── */
+.modo-prospeccao #secoes .item-card{padding:.75rem 1rem}
+.modo-prospeccao .item-title,
+.modo-prospeccao .item-desc,
+.modo-prospeccao .item-det,
+.modo-prospeccao .prog-wrap,
+.modo-prospeccao .dica-box,
+.modo-prospeccao .vwrap,
+.modo-prospeccao .dias-selector,
+.modo-prospeccao .qtd-selector{display:none!important}
+.modo-prospeccao .item-top{margin-bottom:0;justify-content:center}
+.modo-prospeccao #secoes{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem}
+.modo-prospeccao .sec-label{display:none!important}
+.modo-prospeccao .item-card{flex:0 0 auto;border-radius:100px!important;box-shadow:none!important;border:none!important;background:transparent!important;padding:0!important}
+.modo-prospeccao .gancho-card{margin-top:1rem}
+.modo-prospeccao .actions{display:none!important}
+.modo-prospeccao .empresa-addr{display:none}
+.modo-prospeccao .empresa-card{border-radius:14px}
+
 @media(max-width:560px){
   .gancho-grid{grid-template-columns:1fr}
   .gauge-layout{gap:1.5rem}
@@ -346,6 +365,9 @@ body.modo-cliente .modo-bar .btn-voltar-auditor{display:flex}
       <button class="btn-voltar-auditor" style="display:none" id="btnVoltarAuditor" onclick="modoAuditor()">← Voltar ao modo auditor</button>
       <button class="btn-apresentar" id="btnApresentar" onclick="modoCliente()">
         🎯 Apresentar ao cliente
+      </button>
+      <button class="btn-apresentar" id="btnProspeccao" onclick="modoProspeccao()" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)">
+        🌐 Modo prospecção
       </button>
     </div>
   </div>
@@ -654,6 +676,7 @@ function renderRelatorio(place){
   document.getElementById('modoBanner').className='modo-banner auditor';
   document.getElementById('modoBanner').innerHTML='🔍 <strong>Modo Auditor</strong> — Valide os itens manuais antes de apresentar ao cliente';
   document.getElementById('btnApresentar').style.display='flex';
+  document.getElementById('btnProspeccao').style.display='flex';
   document.getElementById('btnVoltarAuditor').style.display='none';
   window.scrollTo({top:document.getElementById('report').offsetTop-60,behavior:'smooth'});
 }
@@ -764,11 +787,26 @@ function modoCliente(){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+function modoProspeccao(){
+  document.body.classList.remove('modo-cliente');
+  document.body.classList.add('modo-prospeccao');
+  document.getElementById('modoBanner').style.cssText='display:block;background:#f3e8ff;border-bottom:2px solid #a78bfa;color:#6b21a8;padding:.6rem 1.5rem;text-align:center;font-size:.82rem;font-weight:600';
+  document.getElementById('modoBanner').innerHTML='🌐 <strong>Modo Prospecção</strong> — Visão online ativa (detalhes ocultos)';
+  document.getElementById('btnApresentar').style.display='none';
+  document.getElementById('btnProspeccao').style.display='none';
+  document.getElementById('btnVoltarAuditor').style.display='flex';
+  document.getElementById('heroSection').style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
 function modoAuditor(){
   document.body.classList.remove('modo-cliente');
+  document.body.classList.remove('modo-prospeccao');
   document.getElementById('modoBanner').className='modo-banner auditor';
+  document.getElementById('modoBanner').style.cssText='';
   document.getElementById('modoBanner').innerHTML='🔍 <strong>Modo Auditor</strong> — Valide os itens manuais antes de apresentar ao cliente';
   document.getElementById('btnApresentar').style.display='flex';
+  document.getElementById('btnProspeccao').style.display='flex';
   document.getElementById('btnVoltarAuditor').style.display='none';
   document.getElementById('heroSection').style.display='block';
 }

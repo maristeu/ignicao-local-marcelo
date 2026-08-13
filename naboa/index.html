@@ -7,10 +7,10 @@
     <meta name="keywords" content="San Blas sailing, navegação em San Blas, veleiro no Panamá, tour de veleiro San Blas, San Blas para brasileiros">
     <title>San Blas Sailing | Experiência Exclusiva de Veleiro no Panamá</title>
     
-    <!-- Google Fonts: Playfair Display para títulos luxuosos e Inter para leitura fluida -->
-    <link rel="preconnect" href="https://googleapis.com">
-    <link rel="preconnect" href="https://gstatic.com" crossorigin>
-    <link href="https://googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -135,9 +135,8 @@
             display: flex;
             align-items: center;
             color: var(--text-light);
-            /* REQUISITO SEO: Background escurecido por overlay para contraste de leitura */
             background: linear-gradient(rgba(7, 17, 32, 0.6), rgba(7, 17, 32, 0.75)), 
-                        url('https://unsplash.com') no-repeat center center/cover;
+                        url('https://images.unsplash.com/photo-1500514966906-fe245eea9344?q=80&w=1920') no-repeat center center/cover;
         }
 
         .hero-content {
@@ -145,7 +144,6 @@
             padding-top: 4rem;
         }
 
-        /* SEO PRINCIPAL: H1 com as palavras-chave vitais */
         .hero-content h1 {
             font-family: var(--font-serif);
             font-size: 3.5rem;
@@ -186,10 +184,6 @@
             color: var(--primary);
         }
 
-        .intro-image {
-            position: relative;
-        }
-
         .intro-image img {
             width: 100%;
             height: 500px;
@@ -197,7 +191,7 @@
             border-left: 4px solid var(--accent);
         }
 
-        /* --- EXPERIENCES (O QUE INCLUI) --- */
+        /* --- EXPERIENCES --- */
         .experiences {
             padding: 8rem 0;
             background-color: var(--primary);
@@ -248,7 +242,7 @@
             font-weight: 300;
         }
 
-        /* --- REVIEWS / PROVA SOCIAL --- */
+        /* --- REVIEWS --- */
         .reviews {
             padding: 8rem 0;
             background-color: var(--bg-light);
@@ -295,11 +289,11 @@
             color: var(--primary);
         }
 
-        /* --- CTA CONVERSION SECTION --- */
+        /* --- CTA SECTION --- */
         .cta-section {
             padding: 10rem 0;
             background: linear-gradient(rgba(7, 17, 32, 0.85), rgba(7, 17, 32, 0.9)), 
-                        url('https://unsplash.com') no-repeat center center/cover;
+                        url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=1920') no-repeat center center/cover;
             text-align: center;
             color: var(--text-light);
         }
@@ -339,3 +333,123 @@
             align-items: center;
         }
 
+        /* Responsive Mobile */
+        @media (max-width: 768px) {
+            .grid-intro, .grid-cards, .grid-reviews {
+                grid-template-columns: 1fr;
+            }
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <a href="#" class="logo">
+                SAN BLAS <span>Sailing Experience</span>
+            </a>
+            <a href="https://wa.me/5511999999999" class="btn-premium">Reservar Veleiro</a>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>San Blas Sailing Exclusivo</h1>
+                <p>Navegue pelo arquipélago mais paradisíaco do Panamá com total privacidade, conforto de alto padrão e atendimento em português.</p>
+                <a href="https://wa.me/5511999999999" class="btn-premium">Consultar Datas</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="intro">
+        <div class="container">
+            <div class="grid-intro">
+                <div class="intro-text">
+                    <span class="section-subtitle">Alta Gastronomia & Conforto</span>
+                    <h2 class="section-title">Uma imersão privativa pelas águas do Panamá</h2>
+                    <p>Viva uma experiência verdadeiramente exclusiva em <strong>San Blas</strong>. Esqueça passeios lotados e roteiros engessados. A bordo do nosso veleiro, você define o ritmo do seu dia.</p>
+                    <p>Com menu de frutos do mar frescos preparado diariamente e atendimento caloroso em português, garantimos o cenário perfeito para desconectar com sofisticação.</p>
+                </div>
+                <div class="intro-image">
+                    <img src="https://images.unsplash.com/photo-1500514966906-fe245eea9344?q=80&w=800" alt="Veleiro exclusivo em San Blas">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="experiences">
+        <div class="container">
+            <span class="section-subtitle">O Que Está Incluído</span>
+            <h2 class="section-title">Sua jornada VIP em alto-mar</h2>
+            
+            <div class="grid-cards">
+                <div class="card">
+                    <span class="card-icon">⛵</span>
+                    <h3>Veleiro Privativo</h3>
+                    <p>O barco é 100% exclusivo para o seu grupo ou casal. Privacidade total para explorar as ilhas mais preservadas.</p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">🍷</span>
+                    <h3>Pensão Completa</h3>
+                    <p>Gastronomia de alto padrão com peixes frescos, frutos do mar, drinks e bebidas inclusas durante toda a estadia.</p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">🇧🇷</span>
+                    <h3>Tripulação em Português</h3>
+                    <p>Capitão e equipe com atendimento no seu idioma para garantir total tranquilidade, segurança e auxílio nas rotas.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="reviews">
+        <div class="container">
+            <span class="section-subtitle">Depoimentos</span>
+            <h2 class="section-title">Quem viveu essa experiência</h2>
+
+            <div class="grid-reviews">
+                <div class="review-box">
+                    <div class="stars">★★★★★</div>
+                    <p class="review-text">"Foi a melhor viagem da nossa vida. O veleiro é impecável, a comida maravilhosa e a privacidade em San Blas não tem preço."</p>
+                    <span class="review-author">Fernanda & Ricardo</span>
+                </div>
+                <div class="review-box">
+                    <div class="stars">★★★★★</div>
+                    <p class="review-text">"Atendimento impecável do início ao fim. Ter tripulação que fala português tornou tudo leve e seguro. Recomendo de olhos fechados."</p>
+                    <span class="review-author">Marcelo A.</span>
+                </div>
+                <div class="review-box">
+                    <div class="stars">★★★★★</div>
+                    <p class="review-text">"San Blas já é incrível, mas fazer esse charter privativo elevou a viagem a outro nível de luxo e descanso."</p>
+                    <span class="review-author">Juliana M.</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Pronto para navegar pelo paraíso?</h2>
+                <p>Garanta sua reserva com antecedência e personalize seu roteiro privativo pelas ilhas de San Blas.</p>
+                <a href="https://wa.me/5511999999999" class="btn-premium">Falar com o Capitão</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; San Blas Sailing Experience. Todos os direitos reservados.</p>
+            <p>San Blas, Panamá</p>
+        </div>
+    </footer>
+
+</body>
+</html>
